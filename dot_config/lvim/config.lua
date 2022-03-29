@@ -52,13 +52,18 @@ lvim.builtin.which_key.mappings["t"] = {
   w = { "<cmd>Trouble workspace_diagnostics<cr>", "Diagnostics" },
 }
 
+-- table.insert(lvim.builtin.which_key.mappings["d"], "U", { "<cmd>lua require(\"dapui\").toggle()<cr>", "DAP UI" })
+
 -- TODO: User Config for predefined plugins
 -- After changing plugin config exit and reopen LunarVim, Run :PackerInstall :PackerCompile
-lvim.builtin.dashboard.active = true
+lvim.builtin.dashboard.active = false
 lvim.builtin.notify.active = true
 lvim.builtin.terminal.active = true
 lvim.builtin.nvimtree.setup.view.side = "left"
+lvim.builtin.nvimtree.setup.disable_netrw = false
+lvim.builtin.nvimtree.setup.hijack_netrw = false
 lvim.builtin.nvimtree.show_icons.git = 0
+lvim.builtin.dap.active = true
 
 -- if you don't want all the parsers change this to a table of the ones you want
 lvim.builtin.treesitter.ensure_installed = {
@@ -149,10 +154,20 @@ lvim.plugins = {
         -- refer to the configuration section below
       }
     end
-  }
+  },
+  {"mg979/vim-visual-multi"},
+  {"leoluz/nvim-dap-go"},
+  { "rcarriga/nvim-dap-ui", requires = {"mfussenegger/nvim-dap"} },
+  {"theHamsta/nvim-dap-virtual-text"},
 }
 
 -- Autocommands (https://neovim.io/doc/user/autocmd.html)
 -- lvim.autocommands.custom_groups = {
 --   { "BufWinEnter", "*.lua", "setlocal ts=8 sw=8" },
 -- }
+
+
+require('dap-go').setup()
+require("dapui").setup()
+require("nvim-dap-virtual-text").setup()
+
