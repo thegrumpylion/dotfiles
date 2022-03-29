@@ -1,3 +1,4 @@
+local dap = require "dap"
 --[[
 lvim is the global options object
 
@@ -171,3 +172,19 @@ require('dap-go').setup()
 require("dapui").setup()
 require("nvim-dap-virtual-text").setup()
 
+dap.adapters.coreclr = {
+  type = 'executable',
+  command = 'netcoredbg',
+  args = {'--interpreter=vscode'}
+}
+
+dap.configurations.cs = {
+  {
+    type = "coreclr",
+    name = "launch - netcoredbg",
+    request = "launch",
+    program = function()
+        return vim.fn.input('Path to dll', vim.fn.getcwd() .. '/bin/Debug/', 'file')
+    end,
+  },
+}
