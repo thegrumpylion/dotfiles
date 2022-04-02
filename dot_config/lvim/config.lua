@@ -18,6 +18,7 @@ lvim.colorscheme = "nord"
 lvim.leader = "space"
 -- add your own keymapping
 lvim.keys.normal_mode["<C-s>"] = ":w<cr>"
+lvim.keys.normal_mode["<C-p>"] = ":exec \":Octo pr list \" . input('repo name: ')<cr>"
 -- unmap a default keymapping
 -- lvim.keys.normal_mode["<C-Up>"] = false
 -- edit a default keymapping
@@ -43,6 +44,7 @@ lvim.keys.normal_mode["<C-s>"] = ":w<cr>"
 
 -- Use which-key to add extra bindings with the leader-key prefix
 lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
+
 lvim.builtin.which_key.mappings["t"] = {
   name = "+Trouble",
   r = { "<cmd>Trouble lsp_references<cr>", "References" },
@@ -53,7 +55,23 @@ lvim.builtin.which_key.mappings["t"] = {
   w = { "<cmd>Trouble workspace_diagnostics<cr>", "Diagnostics" },
 }
 
--- table.insert(lvim.builtin.which_key.mappings["d"], "U", { "<cmd>lua require(\"dapui\").toggle()<cr>", "DAP UI" })
+lvim.builtin.which_key.mappings["O"] = {
+  name = "Octo",
+  p = {
+    name = "Pull Request",
+    l = { "<cmd>Octo pr list<cr>", "List" },
+    s = { "<cmd>Octo pr search<cr>", "Search" },
+    d = { "<cmd>Octo pr diff<cr>", "Diff" },
+  },
+  r = {
+    name = "Review",
+    s = { "<cmd>Octo review start<cr>", "Start" },
+    S = { "<cmd>Octo review submit<cr>", "Submit" },
+    r = { "<cmd>Octo review resume<cr>", "Resume" },
+    d = { "<cmd>Octo review discard<cr>", "Discard" },
+    c = { "<cmd>Octo review comments<cr>", "Comments" },
+  }
+}
 
 -- TODO: User Config for predefined plugins
 -- After changing plugin config exit and reopen LunarVim, Run :PackerInstall :PackerCompile
@@ -62,7 +80,7 @@ lvim.builtin.notify.active = true
 lvim.builtin.terminal.active = true
 lvim.builtin.nvimtree.setup.view.side = "left"
 lvim.builtin.nvimtree.setup.disable_netrw = false
-lvim.builtin.nvimtree.setup.hijack_netrw = false
+lvim.builtin.nvimtree.setup.hijack_netrw = true
 lvim.builtin.nvimtree.show_icons.git = 0
 lvim.builtin.dap.active = true
 
@@ -145,6 +163,7 @@ lvim.builtin.treesitter.highlight.enabled = true
 -- Additional Plugins
 lvim.plugins = {
   {"arcticicestudio/nord-vim"},
+
   {
     "folke/trouble.nvim",
     requires = "kyazdani42/nvim-web-devicons",
@@ -156,21 +175,49 @@ lvim.plugins = {
       }
     end
   },
+
   {"mg979/vim-visual-multi"},
-  {"leoluz/nvim-dap-go"},
-  { "rcarriga/nvim-dap-ui", requires = {"mfussenegger/nvim-dap"} },
-  {"theHamsta/nvim-dap-virtual-text"},
+
+  {
+    "leoluz/nvim-dap-go",
+    config = function ()
+      require('dap-go').setup()
+    end
+  },
+
+  {
+    "rcarriga/nvim-dap-ui",
+    requires = {"mfussenegger/nvim-dap"},
+    config = function ()
+      require("dapui").setup()
+    end
+  },
+
+  {
+    "theHamsta/nvim-dap-virtual-text",
+    config = function ()
+      require("nvim-dap-virtual-text").setup()
+    end
+  },
+
+  {
+    "pwntester/octo.nvim",
+    requires = {
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim",
+      "kyazdani42/nvim-web-devicons",
+    },
+    config = function ()
+      require"octo".setup()
+    end
+  },
+
 }
 
 -- Autocommands (https://neovim.io/doc/user/autocmd.html)
 -- lvim.autocommands.custom_groups = {
 --   { "BufWinEnter", "*.lua", "setlocal ts=8 sw=8" },
 -- }
-
-
-require('dap-go').setup()
-require("dapui").setup()
-require("nvim-dap-virtual-text").setup()
 
 dap.adapters.coreclr = {
   type = 'executable',
@@ -188,3 +235,4 @@ dap.configurations.cs = {
     end,
   },
 }
+
