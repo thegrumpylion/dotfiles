@@ -1,13 +1,7 @@
 local dap = require "dap"
---[[
-lvim is the global options object
+local set = vim.opt
 
-Linters should be
-filled in as strings with either
-a global executable or a path to
-an executable
-]]
--- THESE ARE EXAMPLE CONFIGS FEEL FREE TO CHANGE TO WHATEVER YOU WANT
+set.relativenumber = true
 
 -- general
 lvim.log.level = "warn"
