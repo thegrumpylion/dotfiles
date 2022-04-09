@@ -1,4 +1,3 @@
-local dap = require "dap"
 local set = vim.opt
 local o = vim.o
 
@@ -194,28 +193,6 @@ lvim.plugins = {
     end
   },
 
-}
-
--- Autocommands (https://neovim.io/doc/user/autocmd.html)
--- lvim.autocommands.custom_groups = {
---   { "BufWinEnter", "*.lua", "setlocal ts=8 sw=8" },
--- }
-
-dap.adapters.coreclr = {
-  type = 'executable',
-  command = 'netcoredbg',
-  args = {'--interpreter=vscode'}
-}
-
-dap.configurations.cs = {
-  {
-    type = "coreclr",
-    name = "launch - netcoredbg",
-    request = "launch",
-    program = function()
-        return vim.fn.input('Path to dll', vim.fn.getcwd() .. '/bin/Debug/', 'file')
-    end,
-  },
 }
 
 set.relativenumber = true
