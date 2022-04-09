@@ -175,13 +175,6 @@ lvim.plugins = {
   },
 
   {
-    "theHamsta/nvim-dap-virtual-text",
-    config = function ()
-      require("nvim-dap-virtual-text").setup()
-    end
-  },
-
-  {
     "pwntester/octo.nvim",
     requires = {
       "nvim-lua/plenary.nvim",
