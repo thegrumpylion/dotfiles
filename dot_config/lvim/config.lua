@@ -137,6 +137,11 @@ lvim.plugins = {
       "nvim-treesitter/nvim-treesitter",
       "nvim-telescope/telescope.nvim" -- optional
     },
+  },
+
+  {
+    'glacambre/firenvim',
+    run = function() vim.fn['firenvim#install'](0) end 
   }
 }
 
