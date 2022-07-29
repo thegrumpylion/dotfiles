@@ -30,6 +30,8 @@ lvim.builtin.terminal.active = true
 lvim.builtin.nvimtree.setup.view.side = "left"
 lvim.builtin.nvimtree.setup.renderer.icons.show.git = false
 lvim.builtin.dap.active = true
+lvim.builtin.lualine.style = "default"
+lvim.builtin.lualine.options.theme = "nord"
 
 lvim.lsp.automatic_servers_installation = true
 
