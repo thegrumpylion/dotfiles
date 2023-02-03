@@ -16,10 +16,7 @@ lvim.format_on_save = {
   pattern = "*.lua",
   timeout = 1000,
 }
--- to disable icons and use a minimalist setup, uncomment the following
--- lvim.use_icons = false
 
--- keymappings <https://www.lunarvim.org/docs/configuration/keybindings>
 lvim.leader = "space"
 -- add your own keymapping
 lvim.keys.normal_mode["<C-s>"] = ":w<cr>"
@@ -42,7 +39,6 @@ lvim.builtin.terminal.direction = "tab"
 lvim.builtin.nvimtree.setup.view.side = "left"
 lvim.builtin.nvimtree.setup.renderer.icons.show.git = false
 
--- Automatically install missing parsers when entering buffer
 lvim.builtin.treesitter.auto_install = true
 lvim.builtin.bufferline.active = false
 
@@ -85,10 +81,10 @@ lvim.plugins = {
 
   {
     "cuducos/yaml.nvim",
-    ft = { "yaml" }, -- optional
+    ft = { "yaml" },
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
-      "nvim-telescope/telescope.nvim" -- optional
+      "nvim-telescope/telescope.nvim",
     },
   },
 
