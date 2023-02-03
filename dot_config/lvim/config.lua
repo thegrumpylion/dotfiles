@@ -5,6 +5,9 @@ vim.opt.relativenumber = true
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
 vim.opt.cmdheight = 0
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+vim.opt.foldlevel = 99
 
 -- general
 lvim.log.level = "info"
@@ -42,6 +45,8 @@ lvim.builtin.nvimtree.setup.renderer.icons.show.git = false
 -- Automatically install missing parsers when entering buffer
 lvim.builtin.treesitter.auto_install = true
 lvim.builtin.bufferline.active = false
+
+lvim.builtin.which_key.setup.plugins.presets.z = true
 
 lvim.plugins = {
   { "shaunsingh/nord.nvim" },
