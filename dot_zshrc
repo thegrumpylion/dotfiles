@@ -72,6 +72,7 @@ ZSH_THEME="robbyrussell"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
   git
+  kube-ps1
   fzf
 )
 
@@ -90,17 +91,12 @@ else
   export EDITOR='lvim'
 fi
 
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+# aliases
+alias k=kubectl
+alias κ=kubectl
+alias kns=kubens
+alias ktx=kubectx
+alias clean-cr=find . -path "*/.git/*" -prune -o -type f -exec sed -i "s///g" {} \;
 
 ZSH_CACHE_DIR=$HOME/.cache/oh-my-zsh
 if [[ ! -d $ZSH_CACHE_DIR ]]; then
@@ -108,3 +104,10 @@ if [[ ! -d $ZSH_CACHE_DIR ]]; then
 fi
 
 source $ZSH/oh-my-zsh.sh
+
+export GPG_TTY=$(tty)
+
+PROMPT='$(kube_ps1)'$PROMPT
+kubeoff
+
+source /usr/share/nvm/init-nvm.sh

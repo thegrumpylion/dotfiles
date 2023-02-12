@@ -44,6 +44,8 @@ lvim.builtin.bufferline.active = false
 
 lvim.builtin.which_key.setup.plugins.presets.z = true
 
+lvim.builtin.treesitter.playground.enable = true
+
 lvim.plugins = {
   { "shaunsingh/nord.nvim" },
 
@@ -109,5 +111,9 @@ lvim.plugins = {
     config = function()
       require("nvim-ts-autotag").setup()
     end,
+  },
+
+  {
+    "nvim-treesitter/playground",
   },
 }
