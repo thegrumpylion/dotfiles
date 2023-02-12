@@ -42,6 +42,7 @@ lvim.builtin.nvimtree.setup.renderer.icons.show.git = false
 lvim.builtin.treesitter.auto_install = true
 lvim.builtin.bufferline.active = false
 
+lvim.builtin.which_key.setup.plugins.presets.g = true
 lvim.builtin.which_key.setup.plugins.presets.z = true
 
 lvim.builtin.treesitter.playground.enable = true
