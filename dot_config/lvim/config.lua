@@ -8,6 +8,7 @@ vim.opt.cmdheight = 0
 vim.opt.foldmethod = "expr"
 vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 vim.opt.foldlevel = 99
+vim.opt.path = ".,/usr/include,,~/repos"
 
 -- general
 lvim.log.level = "info"
@@ -21,32 +22,37 @@ lvim.leader = "space"
 -- add your own keymapping
 lvim.keys.normal_mode["<C-s>"] = ":w<cr>"
 
--- lvim.keys.normal_mode["<S-l>"] = ":BufferLineCycleNext<CR>"
--- lvim.keys.normal_mode["<S-h>"] = ":BufferLineCyclePrev<CR>"
+lvim.keys.normal_mode["<S-l>"] = ":BufferLineCycleNext<CR>"
+lvim.keys.normal_mode["<S-h>"] = ":BufferLineCyclePrev<CR>"
 
 -- -- Use which-key to add extra bindings with the leader-key prefix
 lvim.builtin.which_key.mappings["W"] = { "<cmd>noautocmd w<cr>", "Save without formatting" }
 lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
+lvim.builtin.which_key.setup.plugins.presets.g = true
+lvim.builtin.which_key.setup.plugins.presets.z = true
 
+-- theme
 lvim.colorscheme = "nord"
 
 lvim.builtin.alpha.active = true
 lvim.builtin.alpha.mode = "dashboard"
 
+-- toggleterm
 lvim.builtin.terminal.active = true
 lvim.builtin.terminal.direction = "tab"
 
+-- nvimtree
 lvim.builtin.nvimtree.setup.view.side = "left"
 lvim.builtin.nvimtree.setup.renderer.icons.show.git = false
 
+-- treesitter
 lvim.builtin.treesitter.auto_install = true
-lvim.builtin.bufferline.active = false
-
-lvim.builtin.which_key.setup.plugins.presets.g = true
-lvim.builtin.which_key.setup.plugins.presets.z = true
-
 lvim.builtin.treesitter.playground.enable = true
 
+-- bufferline
+lvim.builtin.bufferline.active = true
+
+-- plugins
 lvim.plugins = {
   { "shaunsingh/nord.nvim" },
 
