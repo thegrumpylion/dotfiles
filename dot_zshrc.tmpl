@@ -97,6 +97,9 @@ alias κ=kubectl
 alias kns=kubens
 alias ktx=kubectx
 alias clean-cr=find . -path "*/.git/*" -prune -o -type f -exec sed -i "s///g" {} \;
+alias ls=exa
+alias tree="exa --tree"
+alies cd=z
 
 ZSH_CACHE_DIR=$HOME/.cache/oh-my-zsh
 if [[ ! -d $ZSH_CACHE_DIR ]]; then
