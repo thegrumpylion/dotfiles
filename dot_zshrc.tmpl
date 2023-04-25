@@ -91,16 +91,6 @@ else
   export EDITOR='lvim'
 fi
 
-# aliases
-alias k=kubectl
-alias κ=kubectl
-alias kns=kubens
-alias ktx=kubectx
-alias clean-cr=find . -path "*/.git/*" -prune -o -type f -exec sed -i "s///g" {} \;
-alias ls=exa
-alias tree="exa --tree"
-alias cd=z
-
 ZSH_CACHE_DIR=$HOME/.cache/oh-my-zsh
 if [[ ! -d $ZSH_CACHE_DIR ]]; then
   mkdir $ZSH_CACHE_DIR
@@ -110,10 +100,18 @@ source $ZSH/oh-my-zsh.sh
 
 export GPG_TTY=$(tty)
 
-PROMPT='$(kube_ps1)'$PROMPT
-kubeoff
-
 source /usr/share/nvm/init-nvm.sh
 
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
+
+# aliases
+alias k=kubectl
+alias κ=kubectl
+alias kns=kubens
+alias ktx=kubectx
+alias clean-cr=find . -path "*/.git/*" -prune -o -type f -exec sed -i "s///g" {} \;
+alias ls=exa
+alias tree="exa --tree"
+alias cd=z
+alias kubetoggle="starship toggle kubernetes"
