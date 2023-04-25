@@ -72,6 +72,19 @@ if true then return {
     },
   },
 
+  {
+    'akinsho/toggleterm.nvim',
+    version = "*",
+    config = true
+  },
+
+  {
+    'https://codeberg.org/esensar/nvim-dev-container',
+    config = function()
+      require("devcontainer").setup{}
+    end
+  },
+
 } end
 
 -- every spec file under config.plugins will be loaded automatically by lazy.nvim
