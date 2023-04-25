@@ -4,9 +4,9 @@ $hostname\
 $localip\
 $shlvl\
 $singularity\
-$kubernetes\
 $directory\
 ${custom.ghprofile}\
+$kubernetes\
 $vcsh\
 $fossil_branch\
 $git_branch\
@@ -88,6 +88,10 @@ $character"""
   format = "\\[[$symbol($profile)(\\($region\\))(\\[$duration\\])]($style)\\]"
   symbol = "  "
 
+[azure]
+  disabled = false
+  format = "\\[[$symbol($subscription)]($style)\\]"
+
 [buf]
   symbol = " "
 
@@ -114,14 +118,13 @@ $character"""
 [crystal]
   format = "\\[[$symbol($version)]($style)\\]"
 
-[custom]
-  [custom.ghprofile]
-    command = "gh profile show"
-    disabled = false
-    format = "\\[[$symbol $output]($style)\\]"
-    style = "bold green"
-    symbol = ""
-    when = "gh profile show"
+[custom.ghprofile]
+  command = "gh profile show"
+  disabled = false
+  format = "\\[[$symbol $output]($style)\\]"
+  style = "bold green"
+  symbol = ""
+  when = "gh profile show"
 
 [daml]
   format = "\\[[$symbol($version)]($style)\\]"
@@ -162,6 +165,7 @@ $character"""
   symbol = " "
 
 [gcloud]
+disabled = true
   format = "\\[[$symbol$account(@$domain)(\\($region\\))]($style)\\]"
 
 [git_branch]
@@ -212,7 +216,7 @@ $character"""
   format = "\\[[$symbol($version)]($style)\\]"
 
 [kubernetes]
-  disabled = true
+disabled = false
   format = "\\[[$symbol$context( \\($namespace\\))]($style)\\]"
 
 [lua]
