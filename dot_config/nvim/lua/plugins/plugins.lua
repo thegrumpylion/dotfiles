@@ -85,6 +85,19 @@ if true then return {
     end
   },
 
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      servers = {
+        gdscript = {},
+      },
+      setup = {
+        clangd = function(_, opts)
+          opts.capabilities.offsetEncoding = { "utf-16" }
+        end,
+      },
+    },
+  },
 } end
 
 -- every spec file under config.plugins will be loaded automatically by lazy.nvim
