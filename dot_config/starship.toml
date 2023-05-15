@@ -94,6 +94,7 @@ disabled = true
 
 [buf]
   symbol = " "
+  format = "\\[[$symbol($version)]($style)\\]"
 
 [bun]
   format = "\\[[$symbol($version)]($style)\\]"
