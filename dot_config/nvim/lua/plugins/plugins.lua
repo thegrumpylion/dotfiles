@@ -90,6 +90,8 @@ if true then return {
     opts = {
       servers = {
         gdscript = {},
+        terraformls = {},
+        tflint = {},
       },
       setup = {
         clangd = function(_, opts)
