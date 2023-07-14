@@ -217,7 +217,7 @@ disabled = true
   format = "\\[[$symbol($version)]($style)\\]"
 
 [kubernetes]
-disabled = true
+  disabled = true
   format = "\\[[$symbol$context( \\($namespace\\))]($style)\\]"
 
 [lua]
