@@ -100,6 +100,13 @@ if true then return {
       },
     },
   },
+
+  {
+    "brenoprata10/nvim-highlight-colors",
+    config = function()
+      require("nvim-highlight-colors").setup{}
+    end,
+  },
 } end
 
 -- every spec file under config.plugins will be loaded automatically by lazy.nvim
