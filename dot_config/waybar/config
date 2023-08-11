@@ -17,12 +17,12 @@
       },
       "format-icons": {
         "1": " ",
-        "2": " ",
-        "3": " ",
-        "4": "",
+        "2": "󰅬 ",
+        "3": " ",
+        "4": "󰎈",
         "5": " ",
         "6": " ",
-        "7": " ",
+        "7": "󰊠 ",
         "8": " ",
         "focused": "",
         "urgent": "",
@@ -45,7 +45,7 @@
        "format-icons": {
           "Playing": "   ",
           "Paused": "   ",
-          "Music": "   "
+          "Music": "󰎈   "
        },
        // "max-length":45,
        "interval":3,
@@ -60,8 +60,8 @@
     "idle_inhibitor": {
          "format": "{icon}",
          "format-icons": {
-         "activated": "",
-         "deactivated": ""
+         "activated": "󰈈",
+         "deactivated": "󰈉"
       }
     },
     "mpd": {
@@ -111,7 +111,7 @@
         "format-critical": "{temperatureC}°C {icon}",
         "format": "{temperatureC}°C {icon}",
         "interval": 60,
-        "format-icons": ["", "", ""]
+        "format-icons": ["󰉬", "", "󰉪"]
     },
     "backlight": {
         "interval": 5,
@@ -129,7 +129,7 @@
           "critical": 15
         },
         "format": "{capacity}% {icon}",
-        "format-charging": "{capacity}% ",
+        "format-charging": "{capacity}% 󰃨",
         "format-plugged": "{capacity}% ",
         "format-alt": "{time} {icon}",
         // "format-good": "", // An empty format will hide the module
@@ -142,8 +142,8 @@
     "network": {
         "interface": "wlan0", // (Optional) To force the use of this interface
         "format-wifi": " ",
-        "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
-        "format-linked": "{ifname} (No IP) ",
+        "format-ethernet": "{ifname}: {ipaddr}/{cidr} 󰊗",
+        "format-linked": "{ifname} (No IP) 󰊗",
         "format-disconnected": "Disconnected ⚠",
         "format-alt": "{ifname}: {ipaddr}/{cidr}",
         "interval": 60,
@@ -153,14 +153,14 @@
         "scroll-step": 1, // %, can be a float
         "format": "{volume}%  {format_source}",
         "format-bluetooth": "{volume}% {icon} {format_source}",
-        "format-bluetooth-muted": " {icon} {format_source}",
-        "format-muted": " {format_source}",
+        "format-bluetooth-muted": "󰆪 {icon} {format_source}",
+        "format-muted": "󰆪 {format_source}",
         "format-source": "{volume}% ",
         "format-source-muted": "",
         "format-icons": {
             "headphone": "",
-            "hands-free": "",
-            "headset": "",
+            "hands-free": "󰂑",
+            "headset": "󰂑",
             "phone": "",
             "portable": "",
             "car": "",
@@ -187,7 +187,7 @@
     },
     "disk": {
         "interval": 30,
-        "format": "{percentage_free}% ",
+        "format": "{percentage_free}% 󰋊",
         "path": "/home",
     },
     "custom/power": {
