@@ -147,7 +147,7 @@ disabled = true
   format = "\\[[$symbol($version)]($style)\\]"
 
 [directory]
-  read_only = " "
+  read_only = " "
 
 [docker_context]
   format = "\\[[$symbol$context]($style)\\]"
@@ -235,15 +235,15 @@ disabled = true
 
 [memory_usage]
   format = "\\[$symbol[$ram( | $swap)]($style)\\]"
-  symbol = " "
+  symbol = "󰍛 "
 
 [meson]
   format = "\\[[$symbol$project]($style)\\]"
-  symbol = "喝 "
+  symbol = "󰔷 "
 
 [nim]
   format = "\\[[$symbol($version)]($style)\\]"
-  symbol = " "
+  symbol = "󰆥 "
 
 [nix_shell]
   format = "\\[[$symbol$state( \\($name\\))]($style)\\]"
@@ -278,10 +278,10 @@ disabled = true
     EndeavourOS = " "
     Fedora = " "
     FreeBSD = " "
-    Garuda = "﯑ "
+    Garuda = "󰛓 "
     Gentoo = " "
-    HardenedBSD = "ﲊ "
-    Illumos = " "
+    HardenedBSD = "󰞌 "
+    Illumos = "󰈸 "
     Linux = " "
     Mabox = " "
     Macos = " "
@@ -291,23 +291,23 @@ disabled = true
     Mint = " "
     NetBSD = " "
     NixOS = " "
-    OpenBSD = " "
-    OracleLinux = " "
+    OpenBSD = "󰈺 "
+    OracleLinux = "󰌷 "
     Pop = " "
     Raspbian = " "
     RedHatEnterprise = " "
     Redhat = " "
     Redox = " "
     SUSE = " "
-    Solus = "ﴱ "
+    Solus = "󰠳 "
     Ubuntu = " "
     Unknown = " "
-    Windows = " "
+    Windows = "󰍲 "
     openSUSE = " "
 
 [package]
   format = "\\[[$symbol$version]($style)\\]"
-  symbol = " "
+  symbol = "󰏗 "
 
 [perl]
   format = "\\[[$symbol($version)]($style)\\]"
@@ -336,7 +336,7 @@ disabled = true
   format = "\\[[$symbol($version)]($style)\\]"
 
 [rlang]
-  symbol = "ﳒ "
+  symbol = "󰟔 "
 
 [ruby]
   format = "\\[[$symbol($version)]($style)\\]"
