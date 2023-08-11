@@ -16,18 +16,23 @@ k9s:
     fullScreenLogs: false
     textWrap: false
     showTime: false
-  currentContext: booking
-  currentCluster: local
+  currentContext: vcluster-aks
+  currentCluster: vcluster-aks
   clusters:
-    local:
+    vcluster-aks:
       namespace:
         active: all
         lockFavorites: false
         favorites:
+        - external-dns
+        - b2c-sonarqube
         - all
+        - sonarqube
+        - staging-b2c-backend
+        - dev-b2c-backend
         - default
       view:
-        active: kustomization
+        active: application
       featureGates:
         nodeShell: false
       shellPod:

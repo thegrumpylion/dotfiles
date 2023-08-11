@@ -133,7 +133,7 @@ disabled = true
   disabled = false
   format = "\\[[$symbol $output]($style)\\]"
   style = "bold green"
-  symbol = ""
+  symbol = ""
   when = "gh profile show"
 
 [daml]

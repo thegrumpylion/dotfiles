@@ -69,3 +69,16 @@ plugin:
     args:
     - -c
     - "flux --context $CONTEXT trace --kind `echo $RESOURCE_NAME | sed -E 's/ies$/y/' | sed -E 's/ses$/se/' | sed -E 's/(s|es)$//g'` --api-version $RESOURCE_GROUP/$RESOURCE_VERSION --namespace $NAMESPACE $NAME |& less"
+  argo-sync:
+    shortCut: Shift-S
+    confirm: false
+    description: Argocd Sync
+    scopes:
+    - application
+    command: bash
+    background: false
+    args:
+    - -c
+    - |
+        argocd context $CONTEXT
+        argocd app sync $NAMESPACE/$NAME | less
