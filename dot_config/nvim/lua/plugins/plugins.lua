@@ -75,6 +75,7 @@ return {
         gdscript = {},
         terraformls = {},
         tflint = {},
+        helm_ls = {},
       },
       setup = {
         clangd = function(_, opts)
@@ -113,4 +114,6 @@ return {
       require("symbols-outline").setup()
     end,
   },
+
+  { "towolf/vim-helm", lazy = false },
 }
