@@ -1,6 +1,5 @@
 return {
 
-  -- Add C# to treesitter
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
@@ -10,32 +9,16 @@ return {
     end,
   },
 
-  -- Correctly setup lspconfig for C# 🚀
   {
     "neovim/nvim-lspconfig",
+    dependencies = { "Hoffs/omnisharp-extended-lsp.nvim" },
     opts = {
       servers = {
-        -- Ensure mason installs the server
         omnisharp = {},
       },
-      -- configure omnisharp to fix the semantic tokens bug (really annoying)
       setup = {
-        omnisharp = function(_, _)
-          require("lazyvim.util").on_attach(function(client, _)
-            if client.name == "omnisharp" then
-              ---@type string[]
-              local tokenModifiers = client.server_capabilities.semanticTokensProvider.legend.tokenModifiers
-              for i, v in ipairs(tokenModifiers) do
-                tokenModifiers[i] = v:gsub(" ", "_")
-              end
-              ---@type string[]
-              local tokenTypes = client.server_capabilities.semanticTokensProvider.legend.tokenTypes
-              for i, v in ipairs(tokenTypes) do
-                tokenTypes[i] = v:gsub(" ", "_")
-              end
-            end
-          end)
-          return false
+        omnisharp = function(_, opts)
+          opts.handlers = { ["textDocument/definition"] = require("omnisharp_extended").handler }
         end,
       },
     },
@@ -74,5 +57,18 @@ return {
         },
       }
     end,
+  },
+
+  {
+    "nvim-neotest/neotest",
+    optional = true,
+    dependencies = {
+      "Issafalcon/neotest-dotnet",
+    },
+    opts = {
+      adapters = {
+        ["neotest-dotnet"] = {},
+      },
+    },
   },
 }

@@ -116,4 +116,11 @@ return {
   },
 
   { "towolf/vim-helm", lazy = false },
+
+  -- {
+  --   "nvim-neotest/neotest",
+  --   opts = {
+  --     log_level = vim.log.levels.DEBUG,
+  --   },
+  -- },
 }
