@@ -80,6 +80,11 @@ plugins=(
 
 # User configuration
 
+{{ if (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+# WSL-specific code
+export BROWSER=wslview
+{{ end }}
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
