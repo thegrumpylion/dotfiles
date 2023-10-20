@@ -44,8 +44,6 @@ return {
     end,
   },
 
-  { "mg979/vim-visual-multi" },
-
   -- {
   --   "cuducos/yaml.nvim",
   --   ft = { "yaml" },
@@ -69,32 +67,15 @@ return {
   },
 
   {
-    "neovim/nvim-lspconfig",
-    opts = {
-      servers = {
-        gdscript = {},
-        terraformls = {},
-        tflint = {},
-        helm_ls = {},
-      },
-      setup = {
-        clangd = function(_, opts)
-          opts.capabilities.offsetEncoding = { "utf-16" }
-        end,
-      },
-    },
-  },
-
-  {
     "brenoprata10/nvim-highlight-colors",
     config = function()
       require("nvim-highlight-colors").setup({})
     end,
   },
 
-  {
-    "f-person/git-blame.nvim",
-  },
+  -- {
+  --   "f-person/git-blame.nvim",
+  -- },
 
   {
     "ziontee113/icon-picker.nvim",
@@ -123,4 +104,6 @@ return {
   --     log_level = vim.log.levels.DEBUG,
   --   },
   -- },
+
+  { "rcarriga/nvim-notify", enabled = false },
 }
