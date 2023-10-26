@@ -3,9 +3,6 @@ return {
   opts = {
     servers = {
       gdscript = {},
-      terraformls = {},
-      tflint = {},
-      helm_ls = {},
       bufls = {},
     },
     setup = {

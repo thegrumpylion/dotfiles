@@ -1,30 +1,6 @@
 return {
 
   {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      if type(opts.ensure_installed) == "table" then
-        vim.list_extend(opts.ensure_installed, { "c_sharp" })
-      end
-    end,
-  },
-
-  {
-    "neovim/nvim-lspconfig",
-    dependencies = { "Hoffs/omnisharp-extended-lsp.nvim" },
-    opts = {
-      servers = {
-        omnisharp = {},
-      },
-      setup = {
-        omnisharp = function(_, opts)
-          opts.handlers = { ["textDocument/definition"] = require("omnisharp_extended").handler }
-        end,
-      },
-    },
-  },
-
-  {
     "mfussenegger/nvim-dap",
     optional = true,
     dependencies = {
