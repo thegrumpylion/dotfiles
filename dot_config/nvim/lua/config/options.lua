@@ -3,3 +3,10 @@
 -- Add any additional options here
 
 vim.opt.path = vim.opt.path + vim.fn.expand("$HOME/repos/github.com")
+
+-- additional filetypes
+vim.filetype.add({
+  extension = {
+    templ = "templ",
+  },
+})

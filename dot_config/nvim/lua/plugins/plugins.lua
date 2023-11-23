@@ -1,4 +1,11 @@
 return {
+  {
+    "andythigpen/nvim-coverage",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("coverage").setup()
+    end,
+  },
   -- {
   --   "cuducos/yaml.nvim",
   --   ft = { "yaml" },
