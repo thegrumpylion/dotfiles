@@ -6,7 +6,6 @@ return {
       ---@type lspconfig.options
       servers = {
         regols = {
-          --- that's what the doc of groovy-language-server say to do
           cmd = {
             "regols",
           },

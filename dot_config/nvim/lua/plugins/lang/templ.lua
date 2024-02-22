@@ -6,15 +6,15 @@ return {
         templ = {},
       },
       setup = {
-        tailwindcss = function(_, opts)
-          vim.list_extend(opts.filetypes, { "templ" })
-          -- opts.init_options = {
-          --   userLanguages = {
-          --     templ = "html",
-          --   },
-          -- }
-          return opts
-        end,
+        -- tailwindcss = function(_, opts)
+        --   vim.list_extend(opts.filetypes, { "templ" })
+        --   opts.init_options = {
+        --     userLanguages = {
+        --       templ = "html",
+        --     },
+        --   }
+        --   return opts
+        -- end,
       },
     },
   },
