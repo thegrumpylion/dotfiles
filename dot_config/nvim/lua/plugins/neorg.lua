@@ -17,6 +17,8 @@ return {
               },
             },
           },
+          ["core.presenter"] = { config = { zen_mode = "zen-mode" } },
+          ["core.export"] = {},
         },
       })
     end,
