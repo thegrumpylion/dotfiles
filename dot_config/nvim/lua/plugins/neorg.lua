@@ -1,10 +1,13 @@
 return {
   {
+    "vhyrro/luarocks.nvim",
+    priority = 1000,
+    config = true,
+  },
+  {
     "nvim-neorg/neorg",
-    build = ":Neorg sync-parsers",
-    lazy = false, -- specify lazy = false because some lazy.nvim distributions set lazy = true by default
-    -- tag = "*",
-    dependencies = { "nvim-lua/plenary.nvim" },
+    dependencies = { "luarocks.nvim" },
+    version = "*",
     config = function()
       require("neorg").setup({
         load = {
@@ -17,7 +20,6 @@ return {
               },
             },
           },
-          ["core.presenter"] = { config = { zen_mode = "zen-mode" } },
           ["core.export"] = {},
         },
       })
