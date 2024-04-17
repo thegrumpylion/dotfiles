@@ -17,12 +17,25 @@ return {
             config = {
               workspaces = {
                 notes = "~/notes",
+                mindns = "~/repos/github.com/greatliontech/mindns",
               },
             },
           },
           ["core.export"] = {},
+          ["core.completion"] = {
+            config = {
+              engine = "nvim-cmp",
+            },
+          },
         },
       })
+    end,
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    ---@param opts cmp.ConfigSchema
+    opts = function(_, opts)
+      table.insert(opts.sources, { name = "neorg" })
     end,
   },
 }
