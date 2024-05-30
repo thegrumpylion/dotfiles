@@ -107,6 +107,8 @@ eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
 
 # aliases
+alias kubectl="kubecolor"
+compdef kubecolor=kubectl
 alias k=kubectl
 alias kns=kubens
 alias ktx=kubectx

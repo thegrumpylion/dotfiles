@@ -1,0 +1,27 @@
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[commit]
+	gpgsign = true
+[merge]
+	tool = nvim -d
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[includeIf "gitdir:~/repos/platformcy-dev/"]
+  path = .gitconfig-jinius
+[includeIf "gitdir:~/repos/jiniuscy-b2c/"]
+  path = .gitconfig-jinius
+[includeIf "gitdir:~/repos/nspcy/"]
+  path = .gitconfig-jinius
+[includeIf "gitdir:~/repos/greatliontech/"]
+  path = .gitconfig-personal
+[includeIf "gitdir:~/repos/thegrumpylion/"]
+  path = .gitconfig-personal
+[includeIf "gitdir:~/notes/"]
+  path = .gitconfig-personal
