@@ -81,7 +81,6 @@ $battery\
 $time\
 $status\
 $os\
-$container\
 $shell\
 $character"""
 
@@ -129,12 +128,12 @@ symbol = "⛵"
 when = "argocd context | grep '^*' | tr -s ' ' | cut -d' ' -f 2"
 
 [custom.ghprofile]
-command = "gh profile show"
+command = "yq '.\"github.com\".user' ~/.config/gh/hosts.yml"
 disabled = false
 format = "\\[[$symbol $output]($style)\\]"
 style = "bold green"
 symbol = ""
-when = "gh profile show"
+when = "yq '.\"github.com\".user' ~/.config/gh/hosts.yml"
 
 [daml]
 format = "\\[[$symbol($version)]($style)\\]"
