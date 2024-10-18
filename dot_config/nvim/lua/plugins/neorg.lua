@@ -1,14 +1,21 @@
+-- Function to read a JSON file and parse it into a Lua table
+local function read_json_file(filepath)
+  -- Read the file content
+  local lines = vim.fn.readfile(filepath)
+  -- Concatenate all lines into a single string
+  local json_string = table.concat(lines, "\n")
+  -- Decode the JSON string into a Lua table
+  local lua_table = vim.json.decode(json_string)
+
+  return lua_table
+end
+
 return {
   {
-    "vhyrro/luarocks.nvim",
-    priority = 1000,
-    config = true,
-  },
-  {
     "nvim-neorg/neorg",
-    dependencies = { "luarocks.nvim" },
     version = "*",
     config = function()
+      read_json_file("/home/nikolas/ws.json")
       require("neorg").setup({
         load = {
           ["core.defaults"] = {}, -- Loads default behaviour
@@ -17,7 +24,8 @@ return {
             config = {
               workspaces = {
                 notes = "~/notes",
-                mindns = "~/repos/github.com/greatliontech/mindns",
+                mindns = "~/repos/greatliontech/mindns",
+                semrel = "~/repos/greatliontech/semrel",
               },
             },
           },
@@ -25,6 +33,11 @@ return {
           ["core.completion"] = {
             config = {
               engine = "nvim-cmp",
+            },
+          },
+          ["core.presenter"] = {
+            config = {
+              zen_mode = "zen-mode",
             },
           },
         },

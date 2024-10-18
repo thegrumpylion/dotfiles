@@ -106,6 +106,9 @@ source /usr/share/nvm/init-nvm.sh
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
 
+# aw username
+export USERNAME=nikolas
+
 # aliases
 alias kubectl="kubecolor"
 compdef kubecolor=kubectl
@@ -120,60 +123,3 @@ alias cat='bat --theme=Nord --style=plain'
 alias kubetoggle="starship toggle kubernetes"
 alias ks=k9s
 
-# bitwarden session caching
-
-# Path to Bitwarden session file
-bw_sess_file="$HOME/.cache/bwsess/session"
-
-# Configurable Bitwarden session time-to-live in seconds
-bw_sess_ttl=604800 # 1 week
-
-# Check if Bitwarden session file exists
-if [[ ! -e "$bw_sess_file" ]]; then
-  # Create the file and any necessary directories
-  mkdir -p "$(dirname "$bw_sess_file")" && touch "$bw_sess_file"
-  # Retry until the command exits with 0
-  while true; do
-    # Set BW_SESSION with the result of "bw unlock --raw"
-    BW_SESSION="$(bw unlock --raw)"
-    # Check if the command exited with 0
-    if [[ $? -eq 0 ]]; then
-      # Write BW_SESSION to the file
-      echo "$BW_SESSION" > "$bw_sess_file"
-      # Export BW_SESSION
-      export BW_SESSION="$BW_SESSION"
-      break
-    fi
-  done
-fi
-
-# Get the last modification time of the file in seconds since epoch
-last_modification_time=$(stat -c %Y "$bw_sess_file")
-
-# Get the current time in seconds since epoch
-current_time=$(date +%s)
-
-# Calculate the time difference between the last modification time and the current time
-time_diff=$((current_time - last_modification_time))
-
-# Check if the time difference is less than the configurable Bitwarden session TTL
-if [[ $time_diff -le $bw_sess_ttl ]]; then
-  # Export BW_SESSION with the contents of the file
-  export BW_SESSION="$(cat "$bw_sess_file")"
-else
-  # Clear the Bitwarden session file
-  echo >$bw_sess_file
-  # Retry until the command exits with 0
-  while true; do
-    # Set BW_SESSION with the result of "bw unlock --raw"
-    BW_SESSION="$(bw unlock --raw)"
-    # Check if the command exited with 0
-    if [[ $? -eq 0 ]]; then
-      # Write BW_SESSION to the file
-      echo "$BW_SESSION" > "$bw_sess_file"
-      # Export BW_SESSION
-      export BW_SESSION="$BW_SESSION"
-      break
-    fi
-  done
-fi

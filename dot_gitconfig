@@ -23,5 +23,9 @@
   path = .gitconfig-personal
 [includeIf "gitdir:~/repos/thegrumpylion/"]
   path = .gitconfig-personal
+[includeIf "gitdir:~/repos/iamheimdall/"]
+  path = .gitconfig-personal
 [includeIf "gitdir:~/notes/"]
   path = .gitconfig-personal
+[diff "sopsdiffer"]
+	textconv = sops -d

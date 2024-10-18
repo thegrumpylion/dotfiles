@@ -4,9 +4,9 @@ return {
     opts = {
       servers = {
         templ = {},
-        tailwindcss = {
-          filetypes_include = { "templ" },
-        },
+        -- tailwindcss = {
+        --   filetypes_include = { "templ" },
+        -- },
       },
     },
   },

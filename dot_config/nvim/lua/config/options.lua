@@ -5,6 +5,11 @@
 vim.opt.path = vim.opt.path + vim.fn.expand("$HOME/repos/github.com")
 vim.opt.path = vim.opt.path + vim.fn.expand("$HOME/repos")
 
+vim.g.maplocalleader = ","
+
+vim.o.textwidth = 100
+vim.o.colorcolumn = "101"
+
 -- additional filetypes
 vim.filetype.add({
   extension = {

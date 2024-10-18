@@ -4,11 +4,24 @@ return {
     servers = {
       gdscript = {},
       bufls = {},
+      cucumber_language_server = {
+        settings = {
+          glue = {
+            "src/steps/*.ts",
+          },
+        },
+      },
+      yamlls = {
+        settings = {
+          yaml = {
+            schemas = {
+              ["/home/nikolas/repos/thegrumpylion/grpc-test/schema.json"] = ".cases/*.{yml,yaml}",
+            },
+          },
+        },
+      },
     },
     setup = {
-      clangd = function(_, opts)
-        opts.capabilities.offsetEncoding = { "utf-16" }
-      end,
       gdscript = function(_, opts)
         opts.flags = {
           debounce_text_changes = 150,
