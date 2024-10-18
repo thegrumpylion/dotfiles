@@ -16,7 +16,7 @@ end
 -- For example, changing the color scheme:
 config.color_scheme = "nord"
 
-config.font = wezterm.font("Fira Code")
+config.font = wezterm.font("FiraCode Nerd Font")
 
 config.enable_tab_bar = false
 
