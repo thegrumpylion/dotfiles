@@ -1,209 +1,249 @@
 {
-    // "layer": "top", // Waybar at top layer
-    "position": "top", // Waybar position (top|bottom|left|right)		
-    "height": 14, // Waybar height (to be removed for auto height)
-    "width": 1920, // Waybar width
-    // Choose the order of the modules
-    "modules-left": ["river/tags", "sway/workspaces", "sway/window"],
-    "modules-center": ["sway/mode"],
-    "modules-right": ["pulseaudio","custom/weather", "disk", "memory", "cpu", "temperature", "battery#bat2", "backlight", "network", "custom/pacman","tray","clock","custom/power",],
-    // Modules configuration
-    "sway/workspaces": {
-      "disable-scroll": false,
-      "all-outputs": true,
-      "format": "{icon}",
-      "persistent_workspaces": {
-        "1": [],
-      },
-      "format-icons": {
-        "1": " ",
-        "2": "󰅬 ",
-        "3": " ",
-        "4": "󰎈",
-        "5": " ",
-        "6": " ",
-        "7": "󰊠 ",
-        "8": " ",
-        "focused": "",
-        "urgent": "",
-        "default": ""
-      },
-      "icon-size": 15
+  // "layer": "top", // Waybar at top layer
+  "position": "top", // Waybar position (top|bottom|left|right)
+  "height": 14, // Waybar height (to be removed for auto height)
+  // "width": 1920, // Waybar width
+  // Choose the order of the modules
+  "modules-left": [
+    "river/tags",
+    "sway/workspaces",
+    "sway/window"
+  ],
+  "modules-center": [
+    "sway/mode"
+  ],
+  "modules-right": [
+    "pulseaudio",
+    "custom/weather",
+    "disk",
+    "memory",
+    "cpu",
+    "temperature",
+    "battery#bat2",
+    "backlight",
+    "network",
+    "custom/pacman",
+    "tray",
+    "clock",
+    "custom/power",
+  ],
+  // Modules configuration
+  "sway/workspaces": {
+    "disable-scroll": false,
+    "all-outputs": true,
+    "format": "{icon}",
+    "persistent_workspaces": {
+      "1": [],
     },
-    "river/tags": {
-      "num-tags": 7
+    "format-icons": {
+      "1": " ",
+      "2": "󰅬 ",
+      "3": " ",
+      "4": "󰎈",
+      "5": " ",
+      "6": " ",
+      "7": "󰊠 ",
+      "8": " ",
+      "focused": "",
+      "urgent": "",
+      "default": ""
     },
-    "sway/mode": {
-      "format": "<span style=\"italic\">{}</span>"
+    "icon-size": 15
+  },
+  "river/tags": {
+    "num-tags": 7
+  },
+  "sway/mode": {
+    "format": "<span style=\"italic\">{}</span>"
+  },
+  "sway/window": {
+    "format": "{}",
+  },
+  "custom/media": {
+    "format": "{icon}{}",
+    "return-type": "json",
+    "format-icons": {
+      "Playing": "   ",
+      "Paused": "   ",
+      "Music": "󰎈   "
     },
-    "sway/window": {
-    	"format": "{}",
-    },
-    "custom/media": {
-       "format":"{icon}{}",
-       "return-type": "json",
-       "format-icons": {
-          "Playing": "   ",
-          "Paused": "   ",
-          "Music": "󰎈   "
-       },
-       // "max-length":45,
-       "interval":3,
-       "exec": "fish -c playerstatus | tail -1",
-       "exec-on-event":"fish -c playerstatus | tail -1",
-       "on-click": "playerctl play-pause",
-       "on-click-right": "cmus-remote -u",
-    },
-    "tray": {
-         "spacing": 10,
-    },
-    "idle_inhibitor": {
-         "format": "{icon}",
-         "format-icons": {
-         "activated": "󰈈",
-         "deactivated": "󰈉"
-      }
-    },
-    "mpd": {
-	    "format": "{stateIcon} {consumeIcon} {randomIcon} {repeatIcon} {singleIcon} {artist}-{title} ({elapsedTime:%M:%S}/{totalTime:%M:%S})",
-    	"format-disconnected": "",
-    	"format-stopped": "{consumeIcon} {randomIcon} {repeatIcon} {singleIcon} Stopped",
-    	"interval": 10,
-    	"consume-icons": {
-    		"on": " " // Icon shows only when "consume" is on
-    	},
-    	"random-icons": {
-    		"off": "<span color=\"#f53c3c\"></span> ", // Icon grayed out when "random" is off
-    		"on": " "
-    	},
-    	"repeat-icons": {
-    		"on": " "
-    	},
-    	"single-icons": {
-    		"on": " 1"
-    	},
-    	"state-icons": {
-    		"paused": " ",
-    		"playing": " "
-    	},
-    	"tooltip-format": "MPD (connected)",
-    	"tooltip-format-disconnected": "MPD (disconnected)"
-    },
-    "clock": {
-        // "timezone": "America/New_York",
-        "format": "{:%I:%M %p}",
-        "format-alt": "{:%A, %B %d}",
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-        // "format-alt": "{:%Y-%m-%d}"
-    },
-    "cpu": {
-        "format": "{usage}% ",
-        "on-click": "kitty -e htop",
-        "tooltip": false
-    },
-    "memory": {
-        "format": "{}% "
-    },
-    "temperature": {
-        "thermal-zone": 2,
-        "hwmon-path": "/sys/class/hwmon/hwmon0/temp1_input",
-        "critical-threshold": 80,
-        "format-critical": "{temperatureC}°C {icon}",
-        "format": "{temperatureC}°C {icon}",
-        "interval": 60,
-        "format-icons": ["󰉬", "", "󰉪"]
-    },
-    "backlight": {
-        "interval": 5,
-        "format": "{icon}",
-        "format-alt": "{percent}% {icon}",
-        "format-alt-click": "click-right",
-        "format-icons": ["🌕", "🌔", "🌓", "🌒", "🌑"],
-        "on-scroll-down": "light -U 5",
-        "on-scroll-up": "light -A 5"
-    },
-    "battery": {
-        "states": {
-          "good": 99,
-          "warning": 30,
-          "critical": 15
-        },
-        "format": "{capacity}% {icon}",
-        "format-charging": "{capacity}% 󰃨",
-        "format-plugged": "{capacity}% ",
-        "format-alt": "{time} {icon}",
-        // "format-good": "", // An empty format will hide the module
-        // "format-full": "",
-        "format-icons": ["", "", "", "", ""]
-    },
-    "battery#bat2": {
-        "bat": "BAT0"
-    },
-    "network": {
-        "interface": "wlan0", // (Optional) To force the use of this interface
-        "format-wifi": " ",
-        "format-ethernet": "{ifname}: {ipaddr}/{cidr} 󰊗",
-        "format-linked": "{ifname} (No IP) 󰊗",
-        "format-disconnected": "Disconnected ⚠",
-        "format-alt": "{ifname}: {ipaddr}/{cidr}",
-        "interval": 60,
-        "on-click-middle": "exec kitty -e nmtui"
-    },
-    "pulseaudio": {
-        "scroll-step": 1, // %, can be a float
-        "format": "{volume}%  {format_source}",
-        "format-bluetooth": "{volume}% {icon} {format_source}",
-        "format-bluetooth-muted": "󰆪 {icon} {format_source}",
-        "format-muted": "󰆪 {format_source}",
-        "format-source": "{volume}% ",
-        "format-source-muted": "",
-        "format-icons": {
-            "headphone": "",
-            "hands-free": "󰂑",
-            "headset": "󰂑",
-            "phone": "",
-            "portable": "",
-            "car": "",
-            "default": ["", "", ""]
-        },
-        "on-click": "pavucontrol",
-        "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2% && pamixer --get-volume > $SWAYSOCK.wob",
-        "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2% && pamixer --get-volume > $SWAYSOCK.wob",
-    },
-    "custom/weather": {
-        "exec": "~/.config/waybar/scripts/weather.sh Beijing",
-        "format": "{}",
-        "return-type": "json",
-        "interval": 600
-    },
-	  "custom/pacman": {
-        "format": "{}   ",
-        "interval": 3600,                     // every hour
-        // "restart-interval": 3600,
-        "exec": "/bin/sh -c \"(/usr/bin/checkupdates; /usr/bin/yay -Qqu --color never | sed 's/Get .*//') | sort -u -t' ' -k1,1\" | wc -l",       // # of updates
-        "exec-if": "exit 0",                  // always run; consider advanced run conditions
-        "on-click": "kitty -e yay; pkill -SIGRTMIN+8 waybar", // update system
-        "signal": 8,
-    },
-    "disk": {
-        "interval": 30,
-        "format": "{percentage_free}% 󰋊",
-        "path": "/home",
-    },
-    "custom/power": {
-      	"format": "⏻",
-      	"on-click": "wlogout -p layer-shell",
-    	  "tooltip": false 
-    },
-    "wlr/taskbar": {
-        "format": "{icon}",
-        // "format": "{title:.16}",
-        "icon-theme": "Papirus",
-        "icon-size": 15,
-        "on-click": "activate",
-        "markup": true,
-        "max-length": 7,
-        "on-click-right": "minimize",
-        "on-click-middle": "close"
+    // "max-length":45,
+    "interval": 3,
+    "exec": "fish -c playerstatus | tail -1",
+    "exec-on-event": "fish -c playerstatus | tail -1",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "cmus-remote -u",
+  },
+  "tray": {
+    "spacing": 10,
+  },
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "󰈈",
+      "deactivated": "󰈉"
     }
+  },
+  "mpd": {
+    "format": "{stateIcon} {consumeIcon} {randomIcon} {repeatIcon} {singleIcon} {artist}-{title} ({elapsedTime:%M:%S}/{totalTime:%M:%S})",
+    "format-disconnected": "",
+    "format-stopped": "{consumeIcon} {randomIcon} {repeatIcon} {singleIcon} Stopped",
+    "interval": 10,
+    "consume-icons": {
+      "on": " " // Icon shows only when "consume" is on
+    },
+    "random-icons": {
+      "off": "<span color=\"#f53c3c\"></span> ", // Icon grayed out when "random" is off
+      "on": " "
+    },
+    "repeat-icons": {
+      "on": " "
+    },
+    "single-icons": {
+      "on": " 1"
+    },
+    "state-icons": {
+      "paused": " ",
+      "playing": " "
+    },
+    "tooltip-format": "MPD (connected)",
+    "tooltip-format-disconnected": "MPD (disconnected)"
+  },
+  "clock": {
+    // "timezone": "America/New_York",
+    "format": "{:%I:%M %p}",
+    "format-alt": "{:%A, %B %d}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    // "format-alt": "{:%Y-%m-%d}"
+  },
+  "cpu": {
+    "format": "{usage}% ",
+    "on-click": "kitty -e htop",
+    "tooltip": false
+  },
+  "memory": {
+    "format": "{}% "
+  },
+  "temperature": {
+    "thermal-zone": 2,
+    "hwmon-path": "/sys/class/hwmon/hwmon0/temp1_input",
+    "critical-threshold": 80,
+    "format-critical": "{temperatureC}°C {icon}",
+    "format": "{temperatureC}°C {icon}",
+    "interval": 60,
+    "format-icons": [
+      "󰉬",
+      "",
+      "󰉪"
+    ]
+  },
+  "backlight": {
+    "interval": 5,
+    "format": "{icon}",
+    "format-alt": "{percent}% {icon}",
+    "format-alt-click": "click-right",
+    "format-icons": [
+      "🌕",
+      "🌔",
+      "🌓",
+      "🌒",
+      "🌑"
+    ],
+    "on-scroll-down": "light -U 5",
+    "on-scroll-up": "light -A 5"
+  },
+  "battery": {
+    "states": {
+      "good": 99,
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{capacity}% {icon}",
+    "format-charging": "{capacity}% 󰃨",
+    "format-plugged": "{capacity}% ",
+    "format-alt": "{time} {icon}",
+    // "format-good": "", // An empty format will hide the module
+    // "format-full": "",
+    "format-icons": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  "battery#bat2": {
+    "bat": "BAT0"
+  },
+  "network": {
+    "interface": "wlan0", // (Optional) To force the use of this interface
+    "format-wifi": " ",
+    "format-ethernet": "{ifname}: {ipaddr}/{cidr} 󰊗",
+    "format-linked": "{ifname} (No IP) 󰊗",
+    "format-disconnected": "Disconnected ⚠",
+    "format-alt": "{ifname}: {ipaddr}/{cidr}",
+    "interval": 60,
+    "on-click-middle": "exec kitty -e nmtui"
+  },
+  "pulseaudio": {
+    "scroll-step": 1, // %, can be a float
+    "format": "{volume}%  {format_source}",
+    "format-bluetooth": "{volume}% {icon} {format_source}",
+    "format-bluetooth-muted": "󰆪 {icon} {format_source}",
+    "format-muted": "󰆪 {format_source}",
+    "format-source": "{volume}% ",
+    "format-source-muted": "",
+    "format-icons": {
+      "headphone": "",
+      "hands-free": "󰂑",
+      "headset": "󰂑",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": [
+        "",
+        "",
+        ""
+      ]
+    },
+    "on-click": "pavucontrol",
+    "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2% && pamixer --get-volume > $SWAYSOCK.wob",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2% && pamixer --get-volume > $SWAYSOCK.wob",
+  },
+  "custom/weather": {
+    "exec": "~/.config/waybar/scripts/weather.sh Beijing",
+    "format": "{}",
+    "return-type": "json",
+    "interval": 600
+  },
+  "custom/pacman": {
+    "format": "{}   ",
+    "interval": 3600, // every hour
+    // "restart-interval": 3600,
+    "exec": "/bin/sh -c \"(/usr/bin/checkupdates; /usr/bin/yay -Qqu --color never | sed 's/Get .*//') | sort -u -t' ' -k1,1\" | wc -l", // # of updates
+    "exec-if": "exit 0", // always run; consider advanced run conditions
+    "on-click": "kitty -e yay; pkill -SIGRTMIN+8 waybar", // update system
+    "signal": 8,
+  },
+  "disk": {
+    "interval": 30,
+    "format": "{percentage_free}% 󰋊",
+    "path": "/home",
+  },
+  "custom/power": {
+    "format": "⏻",
+    "on-click": "wlogout -p layer-shell",
+    "tooltip": false
+  },
+  "wlr/taskbar": {
+    "format": "{icon}",
+    // "format": "{title:.16}",
+    "icon-theme": "Papirus",
+    "icon-size": 15,
+    "on-click": "activate",
+    "markup": true,
+    "max-length": 7,
+    "on-click-right": "minimize",
+    "on-click-middle": "close"
+  }
 }
