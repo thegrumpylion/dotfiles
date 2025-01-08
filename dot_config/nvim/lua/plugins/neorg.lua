@@ -30,11 +30,11 @@ return {
             },
           },
           ["core.export"] = {},
-          ["core.completion"] = {
-            config = {
-              engine = "nvim-cmp",
-            },
-          },
+          -- ["core.completion"] = {
+          --   config = {
+          --     engine = "nvim-cmp",
+          --   },
+          -- },
           ["core.presenter"] = {
             config = {
               zen_mode = "zen-mode",
