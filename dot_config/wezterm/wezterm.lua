@@ -23,10 +23,10 @@ config.enable_tab_bar = false
 -- Use the defaults as a base
 config.hyperlink_rules = wezterm.default_hyperlink_rules()
 
--- make ARCH0 jira issue ids clickable
+-- make PENG jira issue ids clickable
 table.insert(config.hyperlink_rules, {
-	regex = [[\bARCH0-(\d+)\b]],
-	format = "https://platformcy.atlassian.net/browse/ARCH0-$1",
+	regex = [[\bPENG-(\d+)\b]],
+	format = "https://candosa.atlassian.net/browse/PENG-$1",
 })
 
 config.keys = {
@@ -37,9 +37,21 @@ config.keys = {
 			QuickSelectArgs = {
 				patterns = {
 					"https?://\\S+",
+					"\\bPENG-(\\d+)\\b", -- Add Jira issue ID pattern
 				},
 				action = wezterm.action_callback(function(window, pane)
 					local url = window:get_selection_text_for_pane(pane)
+					-- Loop through hyperlink_rules to check for matches
+					for _, rule in ipairs(config.hyperlink_rules) do
+						local matches = { url:match(rule.regex) }
+						if #matches > 0 then
+							-- Replace the format placeholders with captured groups
+							url = rule.format:gsub("%$(%d+)", function(index)
+								return matches[tonumber(index)] or ""
+							end)
+							break -- Stop looping after the first match
+						end
+					end
 					wezterm.log_info("opening: " .. url)
 					wezterm.open_with(url)
 				end),

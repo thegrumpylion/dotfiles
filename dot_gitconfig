@@ -13,12 +13,8 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
-[includeIf "gitdir:~/repos/platformcy-dev/"]
-  path = .gitconfig-jinius
-[includeIf "gitdir:~/repos/jiniuscy-b2c/"]
-  path = .gitconfig-jinius
-[includeIf "gitdir:~/repos/nspcy/"]
-  path = .gitconfig-jinius
+[includeIf "gitdir:~/.local/share/chezmoi/"]
+  path = .gitconfig-personal
 [includeIf "gitdir:~/repos/greatliontech/"]
   path = .gitconfig-personal
 [includeIf "gitdir:~/repos/thegrumpylion/"]

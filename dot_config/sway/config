@@ -25,7 +25,7 @@ set $browser chromium
 ### Output configuration
 #
 # Default wallpaper (more resolutions are available in /usr/share/backgrounds/sway/)
-output * bg ~/images/nordbridge.jpg fill
+output * bg ~/images/arch.png fill
 #
 # Example configuration:
 #
