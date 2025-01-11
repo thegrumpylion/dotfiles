@@ -29,6 +29,13 @@ table.insert(config.hyperlink_rules, {
 	format = "https://candosa.atlassian.net/browse/PENG-$1",
 })
 
+local hyperlink_rules = {
+	{
+		regex = "PENG%-(%d+)",
+		format = "https://candosa.atlassian.net/browse/PENG-$1",
+	},
+}
+
 config.keys = {
 	{
 		key = "E",
@@ -37,12 +44,12 @@ config.keys = {
 			QuickSelectArgs = {
 				patterns = {
 					"https?://\\S+",
-					"\\bPENG-(\\d+)\\b", -- Add Jira issue ID pattern
+					"\\bPENG-\\d+\\b", -- Add Jira issue ID pattern
 				},
 				action = wezterm.action_callback(function(window, pane)
 					local url = window:get_selection_text_for_pane(pane)
 					-- Loop through hyperlink_rules to check for matches
-					for _, rule in ipairs(config.hyperlink_rules) do
+					for _, rule in ipairs(hyperlink_rules) do
 						local matches = { url:match(rule.regex) }
 						if #matches > 0 then
 							-- Replace the format placeholders with captured groups
