@@ -65,6 +65,13 @@ input "type:keyboard" {
     xkb_options grp:alt_space_toggle
 }
 
+input "2:7:SynPS/2_Synaptics_TouchPad" {
+    dwt enabled
+    tap disabled
+    natural_scroll enabled
+    middle_emulation enabled
+}
+
 ### Key bindings
 #
 # Basics:
