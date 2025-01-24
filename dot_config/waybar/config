@@ -143,11 +143,20 @@
     "format-alt": "{percent}% {icon}",
     "format-alt-click": "click-right",
     "format-icons": [
-      "🌕",
-      "🌔",
-      "🌓",
-      "🌒",
-      "🌑"
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "󰽢"
     ],
     "on-scroll-down": "light -U 5",
     "on-scroll-up": "light -A 5"
@@ -208,7 +217,7 @@
     },
     "on-click": "pavucontrol",
     "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2% && pamixer --get-volume > $SWAYSOCK.wob",
-    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2% && pamixer --get-volume > $SWAYSOCK.wob",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2% && pamixer --get-volume > $SWAYSOCK.wob"
   },
   "custom/weather": {
     "exec": "~/.config/waybar/scripts/weather.sh Beijing",
@@ -223,7 +232,7 @@
     "exec": "/bin/sh -c \"(/usr/bin/checkupdates; /usr/bin/yay -Qqu --color never | sed 's/Get .*//') | sort -u -t' ' -k1,1\" | wc -l", // # of updates
     "exec-if": "exit 0", // always run; consider advanced run conditions
     "on-click": "kitty -e yay; pkill -SIGRTMIN+8 waybar", // update system
-    "signal": 8,
+    "signal": 8
   },
   "disk": {
     "interval": 30,

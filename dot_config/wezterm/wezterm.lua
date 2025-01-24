@@ -1,7 +1,5 @@
 -- Pull in the wezterm API
 local wezterm = require("wezterm")
-local io = require("io")
-local os = require("os")
 local act = wezterm.action
 
 -- This table will hold the configuration.
@@ -17,6 +15,7 @@ end
 config.color_scheme = "nord"
 
 config.font = wezterm.font("FiraCode Nerd Font")
+config.font_size = 11.0
 
 config.enable_tab_bar = false
 

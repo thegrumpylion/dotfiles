@@ -7,7 +7,6 @@ $singularity\
 $directory\
 ${custom.ghprofile}\
 $kubernetes\
-${custom.argocd}\
 $vcsh\
 $fossil_branch\
 $git_branch\
@@ -118,14 +117,6 @@ symbol = " "
 
 [crystal]
 format = "\\[[$symbol($version)]($style)\\]"
-
-[custom.argocd]
-command = "argocd context | grep '^*' | tr -s ' ' | cut -d' ' -f 2"
-disabled = true
-format = "\\[[$symbol $output]($style)\\]"
-style = "bold #fa8e46"
-symbol = "⛵"
-when = "argocd context | grep '^*' | tr -s ' ' | cut -d' ' -f 2"
 
 [custom.ghprofile]
 command = "yq '.\"github.com\".user' ~/.config/gh/hosts.yml"

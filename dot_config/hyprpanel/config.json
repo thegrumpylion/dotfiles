@@ -1,6 +1,6 @@
 {
   "bar.customModules.updates.pollingInterval": 1440000,
-  "theme.font.size": "1.2em",
+  "theme.font.size": "1rem",
   "scalingPriority": "gdk",
   "theme.font.weight": 600,
   "theme.bar.menus.background": "#2e3440",
@@ -366,10 +366,16 @@
   "theme.bar.buttons.modules.cava.icon_background": "#3b4252",
   "theme.bar.buttons.modules.cava.icon": "#8fbcbb",
   "theme.bar.buttons.modules.cava.border": "#8fbcbb",
-  "theme.bar.menus.menu.dashboard.scaling": 62,
-  "theme.bar.scaling": 85,
-  "theme.bar.menus.menu.clock.scaling": 100,
-  "theme.notification.scaling": 62,
-  "theme.osd.scaling": 85,
-  "theme.bar.menus.menu.dashboard.confirmation_scaling": 85
+  "theme.bar.menus.menu.dashboard.scaling": 75,
+  "theme.bar.scaling": 80,
+  "theme.bar.menus.menu.clock.scaling": 75,
+  "theme.notification.scaling": 80,
+  "theme.osd.scaling": 75,
+  "theme.bar.menus.menu.dashboard.confirmation_scaling": 75,
+  "theme.bar.menus.menu.media.scaling": 75,
+  "theme.bar.menus.menu.volume.scaling": 75,
+  "theme.bar.menus.menu.network.scaling": 75,
+  "theme.bar.menus.menu.bluetooth.scaling": 75,
+  "theme.bar.menus.menu.battery.scaling": 75,
+  "theme.bar.menus.menu.notifications.scaling": 75
 }
