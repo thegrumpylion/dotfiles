@@ -15,13 +15,11 @@
 	required = true
 [includeIf "gitdir:~/.local/share/chezmoi/"]
   path = .gitconfig-personal
-[includeIf "gitdir:~/repos/greatliontech/"]
+[includeIf "gitdir:~/repos/github.com/greatliontech/"]
   path = .gitconfig-personal
-[includeIf "gitdir:~/repos/thegrumpylion/"]
+[includeIf "gitdir:~/repos/github.com/thegrumpylion/"]
   path = .gitconfig-personal
-[includeIf "gitdir:~/repos/iamheimdall/"]
-  path = .gitconfig-personal
-[includeIf "gitdir:~/notes/"]
+[includeIf "gitdir:~/repos/github.com/iamheimdall/"]
   path = .gitconfig-personal
 [diff "sopsdiffer"]
 	textconv = sops -d
