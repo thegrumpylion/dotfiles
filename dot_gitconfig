@@ -21,5 +21,12 @@
   path = .gitconfig-personal
 [includeIf "gitdir:~/repos/github.com/iamheimdall/"]
   path = .gitconfig-personal
+[includeIf "gitdir:~/repos/github.com/Candosa/"]
+  path = .gitconfig-candosa
+[includeIf "gitdir:~/repos/gitlab.com/candosa/"]
+  path = .gitconfig-candosa
 [diff "sopsdiffer"]
 	textconv = sops -d
+[credential "https://gitlab.com"]
+	helper = 
+	helper = !/usr/bin/glab auth git-credential
