@@ -1,4 +1,4 @@
-export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$HOME/go/bin:$PATH
+export PATH=$HOME/go/bin:$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 ZSH=/usr/share/oh-my-zsh/
 
@@ -71,6 +71,7 @@ plugins=(
   git
   fzf
   direnv
+  terraform
 )
 
 
@@ -96,7 +97,7 @@ eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
 
 # aw username
-export USERNAME=nikolas
+export USERNAME=t470p
 
 # aliases
 alias kubectl="kubecolor"
@@ -111,4 +112,11 @@ alias cd=z
 alias cat='bat --theme=Nord --style=plain'
 alias kubetoggle="starship toggle kubernetes"
 alias ks=k9s
+alias task=go-task
 
+newtodo() {
+  local newtodo="${1:-.}"
+  local f="$newtodo/$(date +%F).norg"
+  [ -f "$f" ] || echo "* todo $(date '+%a, %d %b %Y')" > "$f"
+  nvim "$f"
+}
