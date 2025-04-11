@@ -20,6 +20,8 @@ require("lazy").setup({
     -- dap
     { import = "lazyvim.plugins.extras.dap.core" },
     { import = "lazyvim.plugins.extras.dap.nlua" },
+    -- ui (special case: edgy must be imported before arial and outline)
+    { import = "lazyvim.plugins.extras.ui.edgy" },
     -- editor
     { import = "lazyvim.plugins.extras.editor.aerial" },
     { import = "lazyvim.plugins.extras.editor.leap" },
@@ -53,7 +55,6 @@ require("lazy").setup({
     -- test
     { import = "lazyvim.plugins.extras.test.core" },
     -- ui
-    { import = "lazyvim.plugins.extras.ui.edgy" },
     { import = "lazyvim.plugins.extras.ui.mini-animate" },
     -- util
     { import = "lazyvim.plugins.extras.util.chezmoi" },
