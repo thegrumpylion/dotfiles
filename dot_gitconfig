@@ -21,7 +21,7 @@
   path = .gitconfig-personal
 [includeIf "gitdir:~/repos/github.com/iamheimdall/"]
   path = .gitconfig-personal
-[includeIf "gitdir:~/repos/github.com/Candosa/"]
+[includeIf "gitdir:~/repos/github.com/candosa/"]
   path = .gitconfig-candosa
 [includeIf "gitdir:~/repos/gitlab.com/candosa/"]
   path = .gitconfig-candosa
