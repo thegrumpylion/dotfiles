@@ -2,7 +2,6 @@ return {
   "neovim/nvim-lspconfig",
   opts = {
     servers = {
-      gdscript = {},
       bufls = {},
       cucumber_language_server = {
         settings = {
@@ -11,6 +10,7 @@ return {
           },
         },
       },
+      tofu_ls = {},
       yamlls = {
         settings = {
           yaml = {
