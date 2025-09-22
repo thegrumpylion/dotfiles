@@ -1,11 +1,6 @@
 {
-  // "layer": "top", // Waybar at top layer
-  "position": "top", // Waybar position (top|bottom|left|right)
-  "height": 14, // Waybar height (to be removed for auto height)
-  // "width": 1920, // Waybar width
-  // Choose the order of the modules
+  "position": "top",
   "modules-left": [
-    "river/tags",
     "sway/workspaces",
     "sway/window"
   ],
@@ -14,106 +9,54 @@
   ],
   "modules-right": [
     "pulseaudio",
-    "custom/weather",
-    "disk",
     "memory",
     "cpu",
     "temperature",
-    "battery#bat2",
+    "battery",
     "backlight",
     "network",
     "custom/pacman",
     "tray",
     "clock",
-    "custom/power",
+    "custom/power"
   ],
-  // Modules configuration
   "sway/workspaces": {
     "disable-scroll": false,
     "all-outputs": true,
     "format": "{icon}",
     "persistent_workspaces": {
-      "1": [],
+      "1": []
     },
     "format-icons": {
-      "1": " ",
-      "2": "󰅬 ",
-      "3": " ",
-      "4": "󰎈",
-      "5": " ",
-      "6": " ",
-      "7": "󰊠 ",
-      "8": " ",
+      "1": "❶ ",
+      "2": "❷ ",
+      "3": "❸ ",
+      "4": "❹",
+      "5": "❺ ",
+      "6": "❻ ",
+      "7": "❼ ",
+      "8": "❽ ",
+      "9": "❾ ",
       "focused": "",
       "urgent": "",
       "default": ""
     },
-    "icon-size": 15
-  },
-  "river/tags": {
-    "num-tags": 7
+    "icon-size": 16
   },
   "sway/mode": {
     "format": "<span style=\"italic\">{}</span>"
   },
   "sway/window": {
-    "format": "{}",
-  },
-  "custom/media": {
-    "format": "{icon}{}",
-    "return-type": "json",
-    "format-icons": {
-      "Playing": "   ",
-      "Paused": "   ",
-      "Music": "󰎈   "
-    },
-    // "max-length":45,
-    "interval": 3,
-    "exec": "fish -c playerstatus | tail -1",
-    "exec-on-event": "fish -c playerstatus | tail -1",
-    "on-click": "playerctl play-pause",
-    "on-click-right": "cmus-remote -u",
+    "format": "{}"
   },
   "tray": {
-    "spacing": 10,
-  },
-  "idle_inhibitor": {
-    "format": "{icon}",
-    "format-icons": {
-      "activated": "󰈈",
-      "deactivated": "󰈉"
-    }
-  },
-  "mpd": {
-    "format": "{stateIcon} {consumeIcon} {randomIcon} {repeatIcon} {singleIcon} {artist}-{title} ({elapsedTime:%M:%S}/{totalTime:%M:%S})",
-    "format-disconnected": "",
-    "format-stopped": "{consumeIcon} {randomIcon} {repeatIcon} {singleIcon} Stopped",
-    "interval": 10,
-    "consume-icons": {
-      "on": " " // Icon shows only when "consume" is on
-    },
-    "random-icons": {
-      "off": "<span color=\"#f53c3c\"></span> ", // Icon grayed out when "random" is off
-      "on": " "
-    },
-    "repeat-icons": {
-      "on": " "
-    },
-    "single-icons": {
-      "on": " 1"
-    },
-    "state-icons": {
-      "paused": " ",
-      "playing": " "
-    },
-    "tooltip-format": "MPD (connected)",
-    "tooltip-format-disconnected": "MPD (disconnected)"
+    "spacing": 10
   },
   "clock": {
     // "timezone": "America/New_York",
     "format": "{:%I:%M %p}",
     "format-alt": "{:%A, %B %d}",
-    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
     // "format-alt": "{:%Y-%m-%d}"
   },
   "cpu": {
@@ -171,8 +114,6 @@
     "format-charging": "{capacity}% 󰃨",
     "format-plugged": "{capacity}% ",
     "format-alt": "{time} {icon}",
-    // "format-good": "", // An empty format will hide the module
-    // "format-full": "",
     "format-icons": [
       "",
       "",
@@ -180,9 +121,6 @@
       "",
       ""
     ]
-  },
-  "battery#bat2": {
-    "bat": "BAT0"
   },
   "network": {
     "interface": "wlan0", // (Optional) To force the use of this interface
@@ -219,40 +157,22 @@
     "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2% && pamixer --get-volume > $SWAYSOCK.wob",
     "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2% && pamixer --get-volume > $SWAYSOCK.wob"
   },
-  "custom/weather": {
-    "exec": "~/.config/waybar/scripts/weather.sh Beijing",
-    "format": "{}",
-    "return-type": "json",
-    "interval": 600
-  },
   "custom/pacman": {
     "format": "{}   ",
-    "interval": 3600, // every hour
-    // "restart-interval": 3600,
+    "interval": 3600,
     "exec": "/bin/sh -c \"(/usr/bin/checkupdates; /usr/bin/yay -Qqu --color never | sed 's/Get .*//') | sort -u -t' ' -k1,1\" | wc -l", // # of updates
-    "exec-if": "exit 0", // always run; consider advanced run conditions
-    "on-click": "kitty -e yay; pkill -SIGRTMIN+8 waybar", // update system
+    "exec-if": "exit 0",
+    "on-click": "wezterm -e yay; pkill -SIGRTMIN+8 waybar", // update system
     "signal": 8
   },
   "disk": {
     "interval": 30,
     "format": "{percentage_free}% 󰋊",
-    "path": "/home",
+    "path": "/home"
   },
   "custom/power": {
     "format": "⏻",
     "on-click": "wlogout -p layer-shell",
     "tooltip": false
-  },
-  "wlr/taskbar": {
-    "format": "{icon}",
-    // "format": "{title:.16}",
-    "icon-theme": "Papirus",
-    "icon-size": 15,
-    "on-click": "activate",
-    "markup": true,
-    "max-length": 7,
-    "on-click-right": "minimize",
-    "on-click-middle": "close"
   }
 }
