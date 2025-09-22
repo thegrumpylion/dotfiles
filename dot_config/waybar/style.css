@@ -3,6 +3,7 @@
 	font-size: 13px;
 	margin: 0px;
 	font-family: FiraCode Nerd, Product Sans ,Arial, Helvetica, sans-serif;
+  padding: 0px;
 }
 window#waybar {
 	background-color: #2e3440;
@@ -10,9 +11,10 @@ window#waybar {
 }
 #workspaces {
 	background-color: #3b4252;
-	padding: 0px 2px 0px 2px;
-	font-size: 15px;
+	font-size: 14px;
 	border-radius: 10px;
+	padding: 0px 5px 0px 5px;
+  margin-right: 10px;
 }
 #workspaces button {
 	font-size: 14px;
@@ -20,19 +22,12 @@ window#waybar {
 	margin: 0;
 	background-color: transparent;
 	color: #ffffff;
-}
-#window {
-	color: #d8dee9;
-	margin: 0px;
-	border-radius: 10px;
-	padding: 0px 6px 0px 6px;
-}
-#window.empty {
-	background-color: transparent;
+	padding: 0px 5px 0px 5px;
 }
 /* https://github.com/Alexays/Waybar/wiki/FAQ#the-workspace-buttons-have-a-strange-hover-effect */
 #workspaces button:hover {
 	box-shadow: inherit;
+  text-shadow: inherit;
 	color: #5e81ac;
 }
 #workspaces button.focused,#tags button.occupied {
@@ -42,9 +37,9 @@ window#waybar {
 	color: #eb4d4b;
 }
 /* WIDGETS */
-#cpu, #idle_inhibitor, #custom-pacman, #memory, #backlight, #disk, #network, #pulseaudio, #custom-weather, #temperature, #battery {
+#cpu, #custom-pacman, #memory, #backlight, #disk, #network, #pulseaudio, #custom-weather, #temperature, #battery {
 	background-color: #3b4252;
-	padding: 0px 14px 0px 14px;
+	padding: 0px 10px 0px 10px;
 }
 #disk {
 	color:#b48ead;
@@ -77,7 +72,6 @@ window#waybar {
 }
 #battery {
 	color: #8fbcbb;
-	padding: 0px 8px 0px 8px;
 }
 #battery.charging {
 	color: #ffffff;
@@ -100,26 +94,19 @@ window#waybar {
 label:focus {
 	background-color: #000000;
 }
-#idle_inhibitor {
-	font-size: 20px;
-	color: #6f7787;
-}
-#idle_inhibitor.activated {
-	color: #ffffff;
-}
 #clock, #custom-power, #custom-recorder, #tray {
 	background-color: #3b4252;
-	padding: 2px 10px 2px 10px;
+	padding: 0px 10px 0px 10px;
 }
 #clock {
 	font-size: 14px;
 }
 #tray {
 	border-radius: 10px 0px 0px 10px;
-	margin-left: 8px;
+	margin-left: 4px;
 	color: #8fbcbb;
 }
 #custom-power {
-	font-size: 17px;
+	font-size: 18px;
 	border-radius: 0px 10px 10px 0px;
 }
