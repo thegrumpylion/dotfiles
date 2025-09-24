@@ -13,7 +13,8 @@ end
 return {
   {
     "nvim-neorg/neorg",
-    version = "*",
+    lazy = false,
+    branch = "main",
     config = function()
       read_json_file("/home/nikolas/ws.json")
       require("neorg").setup({
