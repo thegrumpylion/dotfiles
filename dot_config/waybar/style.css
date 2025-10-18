@@ -94,17 +94,16 @@ window#waybar {
 label:focus {
 	background-color: #000000;
 }
-#clock, #custom-power, #custom-recorder, #tray {
+#clock, #custom-power, #custom-recorder, #tray, #language {
 	background-color: #3b4252;
 	padding: 0px 10px 0px 10px;
 }
 #clock {
 	font-size: 14px;
 }
-#tray {
+#language {
 	border-radius: 10px 0px 0px 10px;
 	margin-left: 4px;
-	color: #8fbcbb;
 }
 #custom-power {
 	font-size: 18px;

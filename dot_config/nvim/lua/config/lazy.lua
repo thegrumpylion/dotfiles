@@ -61,7 +61,6 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.util.project" },
     -- import/override with your plugins
     { import = "plugins" },
-    { import = "plugins.lang.go" },
     { import = "plugins.lang.templ" },
     { import = "plugins.lang.typst" },
   },

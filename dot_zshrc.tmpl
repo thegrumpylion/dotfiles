@@ -121,3 +121,10 @@ newtodo() {
   [ -f "$f" ] || echo "* todo $(date '+%a, %d %b %Y')" > "$f"
   nvim "$f"
 }
+
+# Merge a new kubeconfig file into the default ~/.kube/config
+kmerge() {
+  KUBECONFIG=~/.kube/config:$1 kubectl config view --flatten > ~/.kube/config.tmp && \
+  mv ~/.kube/config.tmp ~/.kube/config && \
+  echo "✅ Merged '$1' into ~/.kube/config"
+}

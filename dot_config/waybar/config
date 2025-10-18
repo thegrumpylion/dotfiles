@@ -14,6 +14,7 @@
     "backlight",
     "network",
     "custom/pacman",
+    "sway/language",
     "tray",
     "clock",
     "custom/power"
@@ -172,5 +173,9 @@
     "format": "⏻",
     "on-click": "wlogout -p layer-shell",
     "tooltip": false
+  },
+  "sway/language": {
+    "format": "{}",
+    "on-click": "swaymsg input type:keyboard xkb_switch_layout next"
   }
 }

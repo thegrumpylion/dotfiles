@@ -5,7 +5,6 @@ $localip\
 $shlvl\
 $singularity\
 $directory\
-${custom.ghprofile}\
 $kubernetes\
 $vcsh\
 $fossil_branch\
@@ -117,14 +116,6 @@ symbol = " "
 
 [crystal]
 format = "\\[[$symbol($version)]($style)\\]"
-
-[custom.ghprofile]
-command = "yq '.\"github.com\".user' ~/.config/gh/hosts.yml"
-disabled = false
-format = "\\[[$symbol $output]($style)\\]"
-style = "bold green"
-symbol = ""
-when = "yq '.\"github.com\".user' ~/.config/gh/hosts.yml"
 
 [daml]
 format = "\\[[$symbol($version)]($style)\\]"
