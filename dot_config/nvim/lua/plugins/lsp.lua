@@ -11,15 +11,6 @@ return {
         },
       },
       tofu_ls = {},
-      yamlls = {
-        settings = {
-          yaml = {
-            schemas = {
-              ["/home/nikolas/repos/thegrumpylion/grpc-test/schema.json"] = ".cases/*.{yml,yaml}",
-            },
-          },
-        },
-      },
     },
     setup = {
       gdscript = function(_, opts)

@@ -10,6 +10,9 @@ vim.g.maplocalleader = ","
 vim.o.textwidth = 100
 vim.o.colorcolumn = "101"
 
+vim.o.exrc = true -- allow project-local configs
+vim.o.secure = true -- safer: disable risky commands in local configs
+
 -- additional filetypes
 vim.filetype.add({
   extension = {

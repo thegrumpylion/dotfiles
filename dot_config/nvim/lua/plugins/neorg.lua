@@ -11,45 +11,38 @@ local function read_json_file(filepath)
 end
 
 return {
-  -- {
-  --   "nvim-neorg/neorg",
-  --   lazy = false,
-  --   branch = "main",
-  --   config = function()
-  --     read_json_file("/home/nikolas/ws.json")
-  --     require("neorg").setup({
-  --       load = {
-  --         ["core.defaults"] = {}, -- Loads default behaviour
-  --         ["core.concealer"] = {}, -- Adds pretty icons to your documents
-  --         ["core.dirman"] = { -- Manages Neorg workspaces
-  --           config = {
-  --             workspaces = {
-  --               notes = "~/notes",
-  --               mindns = "~/repos/greatliontech/mindns",
-  --               semrel = "~/repos/greatliontech/semrel",
-  --             },
-  --           },
-  --         },
-  --         ["core.export"] = {},
-  --         -- ["core.completion"] = {
-  --         --   config = {
-  --         --     engine = "nvim-cmp",
-  --         --   },
-  --         -- },
-  --         ["core.presenter"] = {
-  --           config = {
-  --             zen_mode = "zen-mode",
-  --           },
-  --         },
-  --       },
-  --     })
-  --   end,
-  -- },
-  -- {
-  --   "hrsh7th/nvim-cmp",
-  --   ---@param opts cmp.ConfigSchema
-  --   opts = function(_, opts)
-  --     table.insert(opts.sources, { name = "neorg" })
-  --   end,
-  -- },
+  {
+    "nvim-neorg/neorg",
+    lazy = false,
+    branch = "main",
+    config = function()
+      read_json_file("/home/nikolas/ws.json")
+      require("neorg").setup({
+        load = {
+          ["core.defaults"] = {}, -- Loads default behaviour
+          ["core.concealer"] = {}, -- Adds pretty icons to your documents
+          ["core.dirman"] = { -- Manages Neorg workspaces
+            config = {
+              workspaces = {
+                notes = "~/notes",
+                mindns = "~/repos/greatliontech/mindns",
+                semrel = "~/repos/greatliontech/semrel",
+              },
+            },
+          },
+          ["core.export"] = {},
+          -- ["core.completion"] = {
+          --   config = {
+          --     engine = "nvim-cmp",
+          --   },
+          -- },
+          ["core.presenter"] = {
+            config = {
+              zen_mode = "zen-mode",
+            },
+          },
+        },
+      })
+    end,
+  },
 }

@@ -2,6 +2,7 @@ return {
   {
     "https://codeberg.org/esensar/nvim-dev-container",
     dependencies = "nvim-treesitter/nvim-treesitter",
+    branch = "main",
     config = function()
       require("devcontainer").setup({
         attach_mounts = {
