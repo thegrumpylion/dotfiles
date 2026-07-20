@@ -5,7 +5,7 @@
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
 [commit]
-	gpgsign = true
+	gpgsign = false
 [merge]
 	tool = nvim -d
 [filter "lfs"]
@@ -30,3 +30,7 @@
 [credential "https://gitlab.com"]
 	helper = 
 	helper = !/usr/bin/glab auth git-credential
+[push]
+	autoSetupRemote = true
+[init]
+	defaultBranch = main

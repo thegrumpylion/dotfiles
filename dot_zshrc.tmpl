@@ -87,6 +87,8 @@ if [[ ! -d $ZSH_CACHE_DIR ]]; then
   mkdir $ZSH_CACHE_DIR
 fi
 
+fpath=($HOME/.local/share/zsh/site-functions $fpath)
+
 source $ZSH/oh-my-zsh.sh
 
 export GPG_TTY=$(tty)
@@ -108,19 +110,11 @@ alias ktx=kubectx
 alias clean-cr=find . -path "*/.git/*" -prune -o -type f -exec sed -i "s///g" {} \;
 alias ls=eza
 alias tree="eza --tree"
-alias cd=z
 alias cat='bat --theme=Nord --style=plain'
 alias kubetoggle="starship toggle kubernetes"
 alias ks=k9s
-alias task=go-task
 alias vim=nvim
-
-newtodo() {
-  local newtodo="${1:-.}"
-  local f="$newtodo/$(date +%F).norg"
-  [ -f "$f" ] || echo "* todo $(date '+%a, %d %b %Y')" > "$f"
-  nvim "$f"
-}
+alias oc=opencode
 
 # Merge a new kubeconfig file into the default ~/.kube/config
 kmerge() {
