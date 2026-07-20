@@ -12,7 +12,9 @@ set $browser chromium
 
 ### Output configuration
 output * bg bg.svg fill
+{{ if eq .chezmoi.hostname "aurora" -}}
 output eDP-1 scale 2
+{{- end }}
 
 ### Idle configuration
 exec swayidle -w \
