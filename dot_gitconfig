@@ -21,6 +21,12 @@
   path = .gitconfig-personal
 [includeIf "gitdir:~/repos/github.com/iamheimdall/"]
   path = .gitconfig-personal
+[includeIf "gitdir:~/repos/github.com/godesktop/"]
+  path = .gitconfig-personal
+[includeIf "gitdir:~/repos/github.com/graphicsgo/"]
+  path = .gitconfig-personal
+[includeIf "gitdir:~/repos/github.com/mindnsio/"]
+  path = .gitconfig-personal
 [includeIf "gitdir:~/repos/github.com/candosa/"]
   path = .gitconfig-candosa
 [diff "sopsdiffer"]
