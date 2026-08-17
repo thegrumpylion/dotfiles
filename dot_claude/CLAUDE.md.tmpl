@@ -2,11 +2,11 @@
 
 Use these exact names; map synonyms ("follow-up", "deferred item", "deviation", "plan amendment") to the defined term, never a new concept.
 
-- **Spec** (`docs/specs/`). The requirements contract, in markdown. Permanent, kept-current; code conforms to spec, never the reverse. Pins the _what_.
+- **Spec** (`docs/specs/`). The requirements contract, in markdown. Permanent, kept-current; code conforms to spec, never the reverse — except a demonstrated correctness fault in the spec itself, which routes through Spec-first's standing authority. Pins the _what_.
 - **Plan** (`docs/plans/`). The active roadmap for one feature, derived from its spec, broken into numbered commit-sized **chunks**. WIP = 1. A plan holds chunk checkboxes ONLY — no status field, no prose log, no close-out records (the per-chunk record is the commit message). Deleted at close-out; git holds history.
 - **Chunk.** A commit-sized slice — coherent end-to-end, tests green, no half-wired state. Runs the adversarial loop independently, lands as one commit. **Sub-chunk `N.x`**: `N.1` = triage gate, the final = close-out gate; only those two anchors are fixed.
 - **Change set.** One round of work inside a chunk — the work and its diff. The adversarial loop runs per change set; a chunk closes when the loop converges.
-- **Issue doc** (`docs/issues/<slug>.md`, indexed in `docs/issues/README.md`). A parked deferral carrying a `Lands:` trigger — a chunk number of the active plan or a self-contained condition.
+- **Issue doc** (`docs/issues/<slug>.md`, indexed in `docs/issues/README.md`). A parked deferral carrying a `Lands:` trigger, chosen in strict order: **(1)** a chunk of the active plan — slot it at filing; **(2)** failing that, a checkable condition — a specific observable event or state a triage gate can test, never an aspiration; **(3)** failing both, `Lands: user decision` (awaiting the user's scheduling call). An arbitrary or untestable condition is silent downscoping — a reviewer flags it like any unfiled gap.
 - **Project invariant.** A property required of all reachable in-spec states, encoded at the strongest artifact the stage affords. No separate register — it rides the spec (design stage) or its enforcement artifact (code stage).
 
 # Artifact homes — the anti-pollution contract
@@ -31,12 +31,29 @@ Every durable artifact must stand alone for a reader with no planning history. P
 - **No-cite invariant.** Kept-current artifacts (specs, production code, README-class docs) cite only kept-current artifacts or a `git log --all -- <path>` recovery line — never a tracking artifact (issue doc, plan, ADR-class delete-on-close doc). Tracking artifacts may cite anything.
 - **`Lands:` outlives plans.** Naming a chunk of the _active_ plan is fine while it lives; the plan's close-out retargets every surviving reference to a self-contained condition.
 
+{{ if eq .chezmoi.hostname "daimon" -}}
+# Machine sharing _(this machine)_
+
+Multiple agent sessions share this machine; some work needs it quiet. The lock is `mlock` (`~/.local/bin/mlock`, flock-based reader-writer).
+
+- **Heavy work** (test suites, builds, mutation campaigns, `stipulator check`, anything minutes-long or load-heavy) runs wrapped: `mlock run <cmd>` — shared holders coexist; the wrapper also waits its turn when quiet is wanted.
+- **Quiet work** (benchmarks, pew/cerebro measurements, anything load-sensitive) runs: `mlock quiet "<reason>" <cmd>` — waits for running heavy work to drain, then excludes new heavy work for its duration.
+- A PreToolUse hook denies unwrapped heavy commands while quiet is wanted or held, echoing the holder's reason — when denied, wait instead of retrying unwrapped.
+- **Waiting is a background task, never a blocked foreground call**: launch `mlock wait && mlock run <cmd>` (or `mlock quiet ...`) with run-in-background and let the completion notification resume you; foreground Bash calls time out long before a measurement finishes.
+- Crash-safe by flock semantics; the `.wanted` marker self-expires (2h TTL).
+
+{{ end -}}
+# Agent roles
+
+- The main agent runs on Fable and owns the spec, the plan, implementation, finding dispositions, issue filing and `Lands:` slotting, and mutation campaigns. It hands the reviewer the adversarial questions and requirements; it never reviews its own change set.
+- Review agents run on Opus 5 and audit only: read-only, hand-probes via `gomutant ephemeral` exclusively, findings back to the main agent for disposition.
+
 # Workflow
 
 Follow: explore/ask → plan → develop → test → docs → commit. Skip steps already covered in context.
 
-- Commits: small, atomic, conventional (feat:/fix:/docs:/chore: — consult `.semrel.yaml`). Commit only when the user asks; otherwise leave the change set ready but uncommitted. Tests and build pass locally before committing.
-- Adjacent issues: fix now if small (with regression tests), file an issue doc if not, never ignore.
+- Commits: small, atomic, conventional (feat:/fix:/docs:/chore: — consult `.semrel.yaml`). **Standing authority (commit cadence):** commit when the change set converges — adversarial loop complete, tests and build green — without a per-commit ask. Pushing still needs an ask.
+- Adjacent defects: **fix now is the default** (with regression tests), not the "if small" exception. File an issue doc instead only when the fix demonstrably cannot land in this change set — needs its own spec/design work, breaks chunk coherence, or awaits a user decision — and state which. Effort alone is never the reason. Over-filing is path-of-least-resistance downscoping, judged exactly like an unfiled gap. Never ignore.
 - At the plan step run the Project-invariants trigger; at explore/plan run the Spec-first trigger — before designing any mechanism.
 
 # Quality bar
@@ -49,20 +66,20 @@ Follow: explore/ask → plan → develop → test → docs → commit. Skip step
 
 # Gates
 
-Four proactive gates share one shape: a trigger, a required one-line statement (to the user + commit message, per Artifact homes), and bounds. The shared principle: unrepresentable > enforced > named; chosen > inherited.
+The gates below share one shape — a trigger, a required one-line statement, and bounds; the triage gates share it too. The shared principle: unrepresentable > enforced > named; chosen > inherited.
 
 ## Spec-first (before designing a mechanism)
 
 - **Trigger:** about to propose or implement a mechanism — concurrency/lock model, ordering/atomicity rule, protocol, schema, persistence/serialization format, consistency/trust rule, any cross-cutting design — in a domain that has a Spec. Exempt: pure mechanical edits, or a mechanism fully grounded in a Spec read _this session_ ("I recall the gist" is not).
 - **Action:** read the _canonical_ Spec first — the top-level contract, not the section nearest the code; follow its pointers. For layered designs (top-tier contract, lower tiers as proven collapses), read the top tier first; the mechanism must be its faithful collapse — never _finer_ (more concurrency/capability than the top tier affords), never _coarser_, never _foreclosing_ (a shape the top-tier form couldn't be built on, forcing a throwaway retrofit).
 - **State:** `Spec-first: canonical=<§ read>; contract=<governing form>; mechanism=<proposed>; collapse-check=<faithful | finer | coarser | FORECLOSURE | n/a: single-tier>.`
-- **Hard stop:** a missing or weaker-than-settled top-tier contract is not filled with a lower-tier-local choice _called_ a collapse — settle it first, or flag the specific foreclosure for the user's call. A Spec found wrong, or two tiers contradicting, routes through the spec-amend channel — surface, never unilaterally edit; spec wins by default.
+- **Hard stop:** a missing or weaker-than-settled top-tier contract is not filled with a lower-tier-local choice _called_ a collapse — settle it first, or flag the specific foreclosure for the user's call. A Spec found wrong, or two tiers contradicting, routes through the spec-amend channel. **Standing authority (spec-amend): Claude owns the spec as part of correctness** — when a spec is demonstrably wrong, internally contradictory, or fails its tooling contract, amend it directly and state the amendment (old contract → new, and why) in the report and commit message; the user audits post-hoc. The authority covers correctness; it does not cover scope/priority or accepting soundness-sensitive semantic changes (verdict-flipping narrowings and the like stay the user's call). Where no correctness fault is shown, spec wins by default.
 
 ## Project invariants (before building a triggered concept)
 
 - **Trigger:** a change set introducing or modifying a domain concept, cross-cutting state/resource, concurrency/ownership model, persistence/serialization boundary, or trust boundary.
 - **Action:** derive invariants of two kinds — **clause-explicit** (a spec clause states it) and **entailed** (the spec assumes but never writes it: conservation, idempotence, monotonicity, referential integrity, ordering — "what must hold that no clause states, such that violating it makes the spec incoherent?").
-- **State:** `Invariant: kind=<clause-explicit|entailed>; property=<…>; from=<clause | "entailed: …">; violation=<reachable in-spec input/state → wrong/unsafe result>.` The `violation=` is the strongest reachable counterexample — prefer one where every clause-explicit invariant still holds yet the system is wrong. No statable `violation=` ⇒ it's a preference — don't record it. Record the fewest invariants that pin the spec; a speculative catalogue is over-encoding.
+- **State:** `Invariant: kind=<clause-explicit|entailed>; property=<…>; from=<clause | "entailed: …">; violation=<reachable in-spec input/state → wrong/unsafe result>.` The `violation=` is the strongest reachable counterexample — prefer one where every clause-explicit invariant still holds yet the system is wrong. No statable `violation=` ⇒ it's a preference — don't record it. Record the fewest invariants that pin the spec; a speculative catalogue is over-encoding. Deriving none is a result, not a skip: state `Invariant: none; considered=<concepts and boundaries walked>`.
 - **Encoding ladder:** unrepresentable type/encoding > property test (for for-all claims; example pins only as named anchor cases) > example/regression test > asserted check > spec-tier (recorded, not enforced — pure-design stage only, carrying `Lands: when code able to violate it is first written`). Never weaker when stronger is available.
 - Invariants are subordinate to the spec exactly as plans are; a wrong invariant or a spec gap routes through the spec-amend channel. A violated _enforced_ invariant is a demonstrated fault and enters Diagnosis unchanged.
 
@@ -72,6 +89,14 @@ Four proactive gates share one shape: a trigger, a required one-line statement (
 - **Ask:** is the state representable only because one fact is stored in ≥2 places that must agree, or is derivable from a single source? Can I collapse to one source of truth so the divergent state cannot be expressed?
 - **State:** `Structural-check: invariant=<…>; illegal-state=<…>; representable-because=<redundant/derivable | "irreducible">; decision=<collapse to <source> | runtime check (why collapse unavailable/disproportionate)>.` "Runtime check" is a sound answer — many invariants are irreducible or the redundancy is deliberate denormalization.
 - **Bounds:** the collapse must itself pass Spec-first (not finer/coarser/foreclosing) and be cost-proportionate; redesigning to make an already-unreachable fault unrepresentable is over-engineering.
+
+## Consolidation scan (at chunk close-out)
+
+- **Trigger:** every chunk's close-out; also opportunistically whenever work has you reading a subsystem broadly. The hunt is affirmative work — "none" must be a conclusion reached by looking, never a skipped step.
+- **Action:** look for structural-collapse opportunities in and adjacent to what the chunk touched: duplicated or parallel logic that should be one mechanism, redundant state (feed Structural enforcement), abstractions at the wrong altitude, vestigial scaffolding, two code concepts where the spec has one.
+- **State:** `Consolidation: scanned=<scope>; candidates=<list | none>.`
+- **Disposition:** small enough to keep the chunk coherent → fold in as its own commit through the normal loop. Larger → issue doc sketching the collapse (what merges into what, what gets deleted, invariants preserved) with a `Lands:` condition or `Lands: user decision`. Surfacing is mandatory; designing and executing a large refactor is scheduled by the user, never started unilaterally.
+- This is the opposite pole from adjacent defects: **defects default to fix; structural opportunities default to surface.** Filing here is doing the job, not dodging it.
 
 ## Root cause (before fixing a defect)
 
@@ -83,29 +108,29 @@ Four proactive gates share one shape: a trigger, a required one-line statement (
 
 # Adversarial review loop
 
-Run on every change set; iterate until convergence. Fresh eyes are the point — no exceptions for "small" or "obvious."
+Run on every change set, until convergence (defined in step 6). This is the highest-value flow in this document — never cut it short. A reviewer who is not the author is the point — no exceptions for "small" or "obvious."
 
-1. **Land + checkpoint + mutation-test.** Apply the change, tests green — do not commit. Main agent stages the whole set with `git add -A`: the staging is both the change-set boundary (reviewers read `git diff HEAD`) and the safety checkpoint (`git restore <path>` reverts a botched mutation to the staged copy, never to HEAD; re-`git add` after intentional edits). Then mutation-test the delta: break each load-bearing invariant the change introduces (flip a comparison, drop a guard, neuter a branch), confirm a _specific_ test fails, restore. A surviving mutation = a vacuous or missing test — strengthen the test, never keep the mutation. **Reviewers only read; they run no tree-mutating git (no add/restore/checkout/reset/stash/clean).**
-2. **Pre-flight + spawn.** Walk plan against spec yourself; state `Spec: <path>; Plan: <path>; divergences: <list|none>`. Spawn a fresh-eyes reviewer (sub-agent, separate session, or different model) with: the diff commands verbatim, scoped to the delta; spec and plan in separate labeled blocks (spec authoritative); what changed this round; what's deferred and why; specific adversarial questions (ownership/refcount lifecycles, ordering/atomicity, panic paths, happens-before/lock order/races, tests-passing-for-wrong-reasons, docs contradicting code); an **anchor & scope audit** (verify each `Diagnosis:` cite's reachability — an unreachable cite is a finding — and that no fix widened scope without the escalation rule's second fault: that's H/M, never graded down because the wider code "looks clean"); **spec coverage** (walk the spec, not the plan — per requirement: implemented file:line / tested / filed; label rows `(spec)` or `(plan)`; missing spec = H/M, plan-only = L); a **spec-amend candidates** section (implemented shape better than spec, or a recorded invariant wrong — relayed to the user verbatim, user decides, spec wins by default). Demand severity-ordered H/M/L/nit findings with file:line + minimum reproducer; word-cap 1000–1500.
-3. **Disposition every finding:** **fixed**, **filed** (issue path), or **disputed** (one-line reasoning the user accepts), plus `class=<introduced|adjacent>`. No silent drops; no "fix if cheap"; nit is not a skip signal.
-4. **Repeat**, each round's prompt opening with the prior round's dispositions so the reviewer focuses on the new delta.
-5. **Ship gate, scoped to this change set.** Introduced vs adjacent is decided by the diff, not judgment: introduced iff the cause-line is in this diff or the diff creates the first reachable in-spec path (reproduces on HEAD, not on base). A pre-existing adjacent H/M is addressed by filing (never blocks; the loop reviews the delta). An introduced H/M is addressed iff fixed, or filed/disputed _with explicit user acceptance_. Ship when no introduced H/M is unaddressed and every L/nit has a disposition.
-6. **Circuit breaker:** an introduced H/M still unaddressed after 3 rounds → stop, surface the open set with options. Autonomous runtimes fix what they introduced, file adjacents and proceed, never self-grant acceptance, never silently ship a regression they caused. More H than last round: distinguish regression (pause, investigate) from newly-exposed pre-existing (record; not a process failure). The breaker is a cost cap, not a verdict.
+1. **Land + checkpoint + mutation-test.** Apply the change, tests green — do not commit. Main agent stages the whole set with `git add -A`: the staging is both the change-set boundary (reviewers read `git diff HEAD`) and the safety checkpoint. Then mutation-test the delta: break each load-bearing invariant the change introduces (flip a comparison, drop a guard, neuter a branch) and confirm a _specific_ test fails. Where the project has gomutant, every probe runs through `gomutant ephemeral` — the tree is never touched and the kill evidence rides the result. The fallback where gomutant is absent is hand edits with the staged copy as the safety net: `git restore <path>` reverts a botched mutation to the staged copy, never to HEAD; re-`git add` after intentional edits. Campaigns (`gomutant run`) run at chunk close-outs; a campaign blocked by unverifiable oracles files an issue, never silently skips. A surviving mutation = a vacuous or missing test — strengthen the test, never keep the mutation. **Reviewers only read; they run no tree-mutating git (no add/restore/checkout/reset/stash/clean) and no scripted file edits — a reviewer's hand-probe runs only through `gomutant ephemeral`.**
+2. **Pre-flight + spawn.** Walk plan against spec yourself; state `Spec: <path>; Plan: <path>; stipulator: <green|n/a>; divergences: <list|none>`. Spawn a fresh-eyes reviewer on Opus 5, and keep it warm for the chunk: the same reviewer serves every round of every change set until the chunk converges, each round opening with the prior round's dispositions. Brief it with: the diff commands verbatim, scoped to the delta; spec and plan in separate labeled blocks (spec authoritative); what changed this round; what's deferred and why; specific adversarial questions (ownership/refcount lifecycles, ordering/atomicity, panic paths, happens-before/lock order/races, tests-passing-for-wrong-reasons, docs contradicting code); an **anchor & scope audit** (verify each `Diagnosis:` cite's reachability — an unreachable cite is a finding — and that no fix widened scope without the escalation rule's second fault: that's H/M, never graded down because the wider code "looks clean"); **spec coverage** (walk the spec, not the plan — per requirement: implemented file:line / tested / filed; label rows `(spec)` or `(plan)`; missing spec = H/M, plan-only = L); a **spec-amend candidates** section (implemented shape better than spec, or a recorded invariant wrong — dispositioned under the spec-amend standing authority: correctness faults amended directly and stated, soundness-sensitive or scope-bearing candidates relayed to the user verbatim, spec wins by default); a **consolidation candidates** section (duplication, parallel mechanisms, collapse/altitude opportunities in or adjacent to the delta — relayed verbatim, feeds the Consolidation scan). Demand severity-ordered H/M/L/nit findings with file:line + minimum reproducer; word-cap 1000–1500.
+3. **Disposition every finding and every candidate (spec-amend, consolidation):** **fixed**, **filed** (issue path), or **disputed** (recorded one-line reasoning; the reviewer accepts or re-raises — an introduced H/M dispute additionally requires explicit user acceptance per the ship gate), plus `class=<introduced|adjacent>`. No silent drops; no "fix if cheap"; nit is not a skip signal.
+4. **Repeat** on the new delta.
+5. **Ship gate, scoped to this change set.** Introduced vs adjacent is decided by the diff, not judgment: introduced iff the cause-line is in this diff or the diff creates the first reachable in-spec path (reproduces in the working tree, not at HEAD). A pre-existing adjacent H/M is addressed by filing (never blocks; the loop reviews the delta). An introduced H/M is addressed iff fixed, or filed/disputed _with explicit user acceptance_. Ship when no introduced H/M is unaddressed and every L/nit has a disposition.
+6. **Convergence, not a round count.** The loop has no round cap and no budget; rounds are not a cost to minimize. Converged means: a full round returns zero new findings and every prior finding is dispositioned — until then, run another round. Never self-grant acceptance for an introduced H/M; never silently ship a regression you introduced — an unaddressed introduced H/M means another round, not a stop. The one thing rounds cannot resolve is a genuine deadlock: a disputed finding the reviewer re-raises with new argument routes to the user as a decision. More H than last round: distinguish regression (pause, investigate) from newly-exposed pre-existing (record; not a process failure).
 
 # Issue & plan triage
 
 `Lands:` triggers don't pull work forward — gates do. State each gate run: `Triage at N.1: <count> match; folding <…>, redeferring <…>, closing <…>.`
 
 1. **Chunk-start gate (N.1).** Scan the issues README for entries whose `Lands:` resolves to this chunk (exact match — `Lands: 3` is not `13`). Disposition each: **fold** into the chunk, **redefer** with new `Lands:` + reason, or **close** as obsolete. Also scan recorded spec-tier invariants whose `Lands:` this chunk meets: **promote** to enforcement or redefer tracked. Condition-triggered entries never fire passively — walk those plausibly related to this chunk and disposition any the landed work demonstrably meets.
-2. **Close-out gate** (chunk close-out, and plan close-out for the plan's own residue). For each resolving issue: (a) **find every cite, wrap-aware** — a `docs/issues/<file>.md` reference hyphen-wraps across comment-continuation lines; grep with continuations rejoined or on a non-wrapping stem (single-line grep has leaked dangling pointers); (b) **promote then retarget** — move the load-bearing rationale inline into the citing spec section / code comment, point the reference at a kept-current artifact; (c) **delete** the issue file + README entry — git holds history. Promote-then-delete makes every resolved issue unconditionally deletable; a "kept as record" file is a skipped promote. **Plan close-out** additionally: extract every undone/deferred item as an issue doc, retarget every chunk-numbered `Lands:` to a condition, then delete the plan.
+2. **Close-out gate** (chunk close-out, and plan close-out for the plan's own residue). For each resolving issue: (a) **find every cite, wrap-aware** — a `docs/issues/<file>.md` reference hyphen-wraps across comment-continuation lines; grep with continuations rejoined or on a non-wrapping stem (single-line grep has leaked dangling pointers); (b) **promote then retarget** — move the load-bearing rationale inline into the citing spec section / code comment, point the reference at a kept-current artifact; (c) **delete** the issue file + README entry — git holds history. Promote-then-delete makes every resolved issue unconditionally deletable; a "kept as record" file is a skipped promote. **Plan close-out** additionally: extract every undone/deferred item as an issue doc, retarget every chunk-numbered `Lands:` to a checkable condition or `user decision`, then delete the plan.
 
 # Testing
 
+- Do not run race-enabled tests or add/enable race settings in test policy unless the user explicitly authorizes it: race-detector output is not accepted as witness evidence here — show the mechanism over a cited reachable path instead.
 - Never modify/skip/disable existing tests to make them pass — fix the implementation.
-- New functionality requires tests. Rigor (-race, fuzzing, table-driven) proportional to the change's risk.
+- New functionality requires tests. Rigor (fuzzing, table-driven, property tests) proportional to the change's risk; `-race` only under the authorization above.
 - **Opportunistic test-surface extension.** On any chunk, extend the test surface adjacent to what the chunk touched: property/fuzz coverage, generator grammar, regression nets. Standing legitimate work — smallest-correct-change governs production code, never tests (stronger enforcement of a stated claim is never over-encoding; a speculative invariant catalogue still is). Bound by adjacency; land sizeable extensions as their own commits.
-- **Generator grammar keeps pace with the input surface.** A chunk extending an input surface extends the corresponding generator/fuzzer grammar in the same chunk, where one exists. A silently lagging grammar is a silent coverage cap — flag it like any downscoping.
-- If a workflow/test harness bounds coverage (top-N, sampling, no-retry), say what was dropped — no silent caps.
+- **Generator grammar keeps pace with the input surface.** A chunk extending an input surface extends the corresponding generator/fuzzer grammar in the same chunk, where one exists. A silently lagging grammar is a silent coverage cap — flag it like any downscoping, as with any harness-level cap (top-N, sampling, no-retry): say what was dropped.
 
 # Documentation
 
@@ -125,10 +150,14 @@ Run on every change set; iterate until convergence. Fresh eyes are the point —
 
 - Use the project's task runner (Taskfile if present); add missing critical commands. Don't introduce one the project doesn't use without asking.
 
+# Spec verification _(project-conditional)_
+
+- Where a project has adopted stipulator, spec invariants bind as claims (`INV-*` enforcement pointers become checkable bindings) and `stipulator check` is green before a change set enters review. Adoption is per-project and starts as a pilot; never introduce it to a project without asking.
+
 # gRPC / proto _(project-conditional)_
 
 - `edition = "2023"`, opaque API in Go; `buf generate` over direct protoc; regenerate on proto changes. Proto comments are public API surface — same standalone rule.
 
 # CI / automation _(project-conditional)_
 
-- Use semrel (github.com/greatliontech/semrel) where adopted. Author's local checkout: `~/repos/github.com/greatliontech/semrel` (environment-specific).
+- Use semrel (github.com/greatliontech/semrel) where adopted.
