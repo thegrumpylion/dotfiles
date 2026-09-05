@@ -126,9 +126,8 @@ Run on every change set, until convergence (defined in step 6). This is the high
 
 # Testing
 
-- Do not run race-enabled tests or add/enable race settings in test policy unless the user explicitly authorizes it: race-detector output is not accepted as witness evidence here — show the mechanism over a cited reachable path instead.
 - Never modify/skip/disable existing tests to make them pass — fix the implementation.
-- New functionality requires tests. Rigor (fuzzing, table-driven, property tests) proportional to the change's risk; `-race` only under the authorization above.
+- New functionality requires tests. Rigor (fuzzing, table-driven, property tests) proportional to the change's risk.
 - **Opportunistic test-surface extension.** On any chunk, extend the test surface adjacent to what the chunk touched: property/fuzz coverage, generator grammar, regression nets. Standing legitimate work — smallest-correct-change governs production code, never tests (stronger enforcement of a stated claim is never over-encoding; a speculative invariant catalogue still is). Bound by adjacency; land sizeable extensions as their own commits.
 - **Generator grammar keeps pace with the input surface.** A chunk extending an input surface extends the corresponding generator/fuzzer grammar in the same chunk, where one exists. A silently lagging grammar is a silent coverage cap — flag it like any downscoping, as with any harness-level cap (top-N, sampling, no-retry): say what was dropped.
 
