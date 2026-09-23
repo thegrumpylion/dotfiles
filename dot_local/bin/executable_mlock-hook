@@ -18,7 +18,7 @@ MLOCK = os.path.expanduser("~/.local/bin/mlock")
 # or subshell, or behind exec/timeout/env-assignment prefixes — never a
 # bare word inside a path or an argument.
 PREFIX = (
-    r"(?:^|[;&|(]\s*|\bexec\s+|\btimeout\s+(?:\S+\s+){1,3})"
+    r"(?:^|[;&|(\n]\s*|\bexec\s+|\btimeout\s+(?:\S+\s+){1,3})"
     r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*"
 )
 HEAVY = re.compile(
