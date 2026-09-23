@@ -49,10 +49,11 @@ print(json.dumps({
         "hookEventName": "PreToolUse",
         "permissionDecision": "deny",
         "permissionDecisionReason": (
-            "heavy command outside mlock (" + state + "). Run it as "
-            "`mlock run timeout 570 <cmd>` — it waits for a heavy slot; "
+            "heavy command not wrapped in mlock. Run it as "
+            "`mlock run timeout 570 <cmd>`: it waits for a heavy slot; "
             "exit 75 means rerun the same call. Measurements run as "
-            "`mlock quiet \"<reason>\" <cmd>`. Never gate on load average."
+            "`mlock quiet \"<reason>\" <cmd>`. Never gate on load average. "
+            "Lock now: " + state
         ),
     }
 }))
