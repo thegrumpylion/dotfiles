@@ -31,18 +31,15 @@ Every durable artifact must stand alone for a reader with no planning history. P
 - **No-cite invariant.** Kept-current artifacts (specs, production code, README-class docs) cite only kept-current artifacts or a `git log --all -- <path>` recovery line — never a tracking artifact (issue doc, plan, ADR-class delete-on-close doc) — with one exception: a code comment may cite the single issue doc tracking its own deferral, while that issue is open; the close-out gate's promote-then-retarget removes the cite at resolution, so it never outlives the issue. Tracking artifacts may cite anything.
 - **`Lands:` outlives plans.** Naming a chunk of the _active_ plan is fine while it lives; the plan's close-out retargets every surviving reference to a self-contained condition.
 
-{{ if eq .chezmoi.hostname "daimon" -}}
-# Machine sharing _(this machine)_
+# Machine sharing
 
-Multiple agent sessions share this machine; some work needs it quiet. The lock is `mlock` (`~/.local/bin/mlock`, flock-based reader-writer).
+Agent sessions share every machine; `mlock` (`~/.local/bin/mlock`, flock-based, managed by chezmoi) serialises heavy work — N heavy slots (cores/4, at least 1) plus an exclusive quiet mode for measurements. Every wait it makes is bounded to fit one tool call; on timeout it exits 75 with the holder's reason and the caller reruns the same call.
 
-- **Heavy work** (test suites, builds, mutation campaigns, `stipulator check`, anything minutes-long or load-heavy) runs wrapped: `mlock run <cmd>` — shared holders coexist; the wrapper also waits its turn when quiet is wanted.
-- **Quiet work** (benchmarks, pew/cerebro measurements, anything load-sensitive) runs: `mlock quiet "<reason>" <cmd>` — waits for running heavy work to drain, then excludes new heavy work for its duration.
-- A PreToolUse hook denies unwrapped heavy commands while quiet is wanted or held, echoing the holder's reason — when denied, wait instead of retrying unwrapped.
-- **Waiting is a background task, never a blocked foreground call**: launch `mlock wait && mlock run <cmd>` (or `mlock quiet ...`) with run-in-background and let the completion notification resume you; foreground Bash calls time out long before a measurement finishes.
-- Crash-safe by flock semantics; the `.wanted` marker self-expires (2h TTL).
+- **Heavy work** (test suites, builds, vet, generation, mutation probes and campaigns, `stipulator check/gate/verify`, anything minutes-long or load-heavy) runs in two foreground calls: `mlock wait` (blocks until a slot is free and no quiet is wanted or held; rerun on exit 75), then `mlock run timeout 570 <cmd>` (takes a slot and a shared hold, runs the command; exit 75 means the slot was lost meanwhile — go back to `mlock wait`). Each call sits inside the Bash tool's ten-minute timeout (`timeout: 600000`). Slots are the concurrency cap: nobody counts agents or reads the load average, which is a low-pass filter of everyone's work and never reads free beside a steady neighbour.
+- **Quiet work** (benchmarks, pew/cerebro measurements, anything load-sensitive) runs `mlock quiet "<reason>" <cmd>` — waits for running heavy work to drain, then excludes new heavy work for its duration. It is long, so only a driver runs it, in background mode.
+- The PreToolUse hook denies an unwrapped heavy command, echoing the wrapper and the lock's state — when denied, wrap it; never retry unwrapped, never wait on a watcher loop.
+- Crash-safe by flock semantics; the `.wanted` marker self-expires (2h TTL); `mlock status` shows holders and slots.
 
-{{ end -}}
 # Agent roles
 
 - The main agent runs on Fable and owns the spec, the plan, implementation, finding dispositions, issue filing and `Lands:` slotting, and mutation campaigns. It hands the reviewer the adversarial questions and requirements; it never reviews its own change set. It is the authority over what a review returns: it vets every finding and candidate — a one-line verdict, confirmed or refuted with the reason — assigns the severity of record (the reviewer's grade is advisory), and decides a re-raise; only a genuine deadlock goes to the user.

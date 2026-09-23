@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""PreToolUse hook for Bash: heavy commands run only through mlock.
+
+Reads the hook JSON on stdin. A command that is not heavy, or that is
+already wrapped in `mlock run` / `mlock quiet`, is admitted silently
+(exit 0). An unwrapped heavy command is denied with a reason that names
+the wrapper and the lock's current state, so the agent wraps it instead
+of retrying unwrapped. A broken lock tool never bricks the session."""
+import json
+import os
+import re
+import subprocess
+import sys
+
+MLOCK = os.path.expanduser("~/.local/bin/mlock")
+
+# A heavy program in command position: at the start, after a separator
+# or subshell, or behind exec/timeout/env-assignment prefixes — never a
+# bare word inside a path or an argument.
+PREFIX = (
+    r"(?:^|[;&|(]\s*|\bexec\s+|\btimeout\s+(?:\S+\s+){1,3})"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*"
+)
+HEAVY = re.compile(
+    PREFIX
+    + r"(?:go\s+(?:test|build|vet|run)|gomutant\s+(?:run|ephemeral)"
+    r"|stipulator\s+(?:check|gate|verify)|task\s+(?:gen|test|build)"
+    r"|pew\s+(?:run|stat)|cerebro\s)\b"
+)
+WRAPPED = re.compile(r"\bmlock\s+(?:run|quiet)\b")
+
+try:
+    payload = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+command = (payload.get("tool_input") or {}).get("command") or ""
+if not HEAVY.search(command) or WRAPPED.search(command):
+    sys.exit(0)
+state = "lock state unknown"
+try:
+    probe = subprocess.run(
+        [MLOCK, "check"], capture_output=True, text=True, timeout=10
+    )
+    state = probe.stdout.strip() or state
+except Exception:
+    pass  # a broken lock tool must never brick the session
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": (
+            "heavy command outside mlock (" + state + "). Run "
+            "`mlock wait` (bounded; rerun on exit 75), then the same "
+            "command as `mlock run timeout 570 <cmd>`; measurements as "
+            "`mlock quiet \"<reason>\" <cmd>`. Never gate on load average."
+        ),
+    }
+}))
