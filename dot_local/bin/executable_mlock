@@ -12,16 +12,15 @@
 #
 # Every wait is bounded so one call fits inside one agent tool call; on
 # timeout mlock exits 75 (EX_TEMPFAIL) with the reason on stderr and the
-# caller reruns the same call. The load average is never consulted: it
+# caller reruns the same call. `run` keeps its bound short so the work
+# it starts always has a fresh call budget of its own; a background
+# caller raises MLOCK_RUN_WAIT. The load average is never consulted: it
 # is a low-pass filter of everyone's work and never reads free beside a
 # steady neighbour.
 #
-#   mlock wait                      block until heavy work may start
-#                                   (no quiet wanted or held, a slot
-#                                   free); bounded by MLOCK_WAIT, 570s
-#   mlock run <cmd...>              take a slot and a shared hold, then
-#                                   run <cmd>; bounded by MLOCK_RUN_WAIT,
-#                                   30s — pair it with `mlock wait`
+#   mlock run <cmd...>              wait for a heavy slot and a shared
+#                                   hold (MLOCK_RUN_WAIT, 30s), then run
+#                                   <cmd>; exit 75 = rerun the same call
 #   mlock quiet <reason> <cmd...>   run <cmd> with the machine quiet;
 #                                   drain bounded by MLOCK_QUIET_WAIT,
 #                                   7200s
@@ -37,7 +36,6 @@ LOCK="${MLOCK_FILE:-$HOME/.machine.lock}"
 WANTED="$LOCK.wanted"
 TTL_SECONDS="${MLOCK_TTL:-7200}"
 QUIET_WAIT="${MLOCK_QUIET_WAIT:-7200}"
-WAIT_SECONDS="${MLOCK_WAIT:-570}"
 RUN_WAIT="${MLOCK_RUN_WAIT:-30}"
 cores=$(nproc 2>/dev/null || echo 4)
 SLOTS="${MLOCK_SLOTS:-$(( cores / 4 > 0 ? cores / 4 : 1 ))}"
@@ -96,19 +94,6 @@ blocked_reason() { # prints why heavy work may not start now; exit 0 when it may
 }
 
 case "${1:-help}" in
-wait)
-	deadline=$(($(date +%s) + WAIT_SECONDS))
-	while :; do
-		if reason=$(blocked_reason); then
-			exit 0
-		fi
-		if [ "$(date +%s)" -ge "$deadline" ]; then
-			echo "mlock wait: still blocked after ${WAIT_SECONDS}s — $reason" >&2
-			exit "$TEMPFAIL"
-		fi
-		sleep 3
-	done
-	;;
 run)
 	shift
 	[ "$#" -ge 1 ] || { echo "mlock run: missing command" >&2; exit 2; }
@@ -176,7 +161,11 @@ status)
 	echo "heavy slots: $busy of $SLOTS busy"
 	[ -z "$holders" ] || printf '%s\n' "$holders"
 	;;
+help|-h|--help)
+	sed -n '2,32p' "$0"
+	;;
 *)
-	sed -n '2,33p' "$0"
+	echo "mlock: unknown command '$1' (run, quiet, check, status)" >&2
+	exit 2
 	;;
 esac
