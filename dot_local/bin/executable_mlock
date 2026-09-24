@@ -41,7 +41,7 @@
 #                                   included
 #
 # Environment: MLOCK_FILE (default ~/.machine.lock), MLOCK_SLOTS
-# (default nproc/4, at least 1), MLOCK_TTL (wanted marker, default 7200),
+# (default ~/.config/mlock/slots, else nproc/4, at least 1), MLOCK_TTL (wanted marker, default 7200),
 # MLOCK_QUIET_WAIT (drain bound, default 7200), MLOCK_QUIET_MAX (hold
 # bound, default 3600), MLOCK_WANTED_HOLD (priority window, default 300),
 # MLOCK_WANTED_CYCLE (marker refresh period, default 600).
@@ -57,7 +57,14 @@ WANTED_HOLD="${MLOCK_WANTED_HOLD:-300}"
 WANTED_CYCLE="${MLOCK_WANTED_CYCLE:-600}"
 RUN_WAIT="${MLOCK_RUN_WAIT:-30}"
 cores=$(nproc 2>/dev/null || echo 4)
-SLOTS="${MLOCK_SLOTS:-$(( cores / 4 > 0 ? cores / 4 : 1 ))}"
+# The slot count: MLOCK_SLOTS, else the host's ~/.config/mlock/slots (a
+# per-machine choice chezmoi does not manage), else cores/4, at least 1.
+SLOTS="${MLOCK_SLOTS:-}"
+if [ -z "$SLOTS" ] && [ -r "$HOME/.config/mlock/slots" ]; then
+	SLOTS=$(tr -dc '0-9' <"$HOME/.config/mlock/slots")
+fi
+SLOTS="${SLOTS:-$(( cores / 4 > 0 ? cores / 4 : 1 ))}"
+[ "$SLOTS" -ge 1 ] 2>/dev/null || SLOTS=1
 TEMPFAIL=75
 
 touch "$LOCK"
