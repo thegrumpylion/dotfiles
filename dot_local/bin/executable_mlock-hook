@@ -28,6 +28,17 @@ HEAVY = re.compile(
     r"|pew\s+(?:run|stat)|cerebro\s)\b"
 )
 WRAPPED = re.compile(r"\bmlock\s+(?:run|quiet)\b")
+# Quiet mode is for benchmarks alone. A build, test, vet, generation, probe
+# or check wrapped in `mlock quiet` takes the whole machine for ordinary
+# heavy work and starves every other session; it is denied, `-bench` runs
+# excepted.
+QUIET_MISUSE = re.compile(
+    r"\bmlock\s+quiet\s+(?:\"[^\"]*\"|'[^']*'|\S+)\s+"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:env\s+(?:\S+=\S*\s+)*)?"
+    r"(?:timeout\s+(?:\S+\s+){1,3})?"
+    r"(go\s+(?:test|build|vet|run|generate)|gomutant\s+(?:run|ephemeral)"
+    r"|stipulator\s+(?:check|gate|verify|compile)|task\s+(?:gen|test|build))\b"
+)
 
 try:
     payload = json.load(sys.stdin)
@@ -39,6 +50,21 @@ command = (payload.get("tool_input") or {}).get("command") or ""
 # is not mistaken for running it.
 HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2[ \t]*(?=\n|$)", re.S)
 command = HEREDOC.sub("<<heredoc", command)
+misuse = QUIET_MISUSE.search(command)
+if misuse and "-bench" not in command:
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": (
+                "quiet mode is for benchmarks alone: `" + misuse.group(1) + "` is "
+                "ordinary heavy work and takes a slot, never the whole machine. "
+                "Run it as `mlock run timeout 570 <cmd>`; `mlock quiet` is for "
+                "pew/cerebro measurements and `-bench` runs only."
+            ),
+        }
+    }))
+    sys.exit(0)
 if not HEAVY.search(command) or WRAPPED.search(command):
     sys.exit(0)
 state = "lock state unknown"
