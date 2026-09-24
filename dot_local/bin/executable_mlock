@@ -8,7 +8,12 @@
 # flock(2) semantics give crash-release for free: a dead holder's locks
 # vanish with its process. A `.wanted` marker gives quiet priority —
 # flock has none — and carries the reason; its TTL bounds a crashed
-# quiet-seeker.
+# quiet-seeker. The priority comes in windows, not for the whole wait:
+# the marker holds new heavy work off for MLOCK_WANTED_HOLD seconds
+# (300) after each refresh, and the waiting quiet refreshes it every
+# MLOCK_WANTED_CYCLE seconds (600), so a quiet request stalled behind a
+# long heavy holder blocks the other slots half the time instead of
+# starving every session until that holder finishes.
 #
 # Every wait is bounded so one call fits inside one agent tool call; on
 # timeout mlock exits 75 (EX_TEMPFAIL) with the reason on stderr and the
@@ -38,7 +43,8 @@
 # Environment: MLOCK_FILE (default ~/.machine.lock), MLOCK_SLOTS
 # (default nproc/4, at least 1), MLOCK_TTL (wanted marker, default 7200),
 # MLOCK_QUIET_WAIT (drain bound, default 7200), MLOCK_QUIET_MAX (hold
-# bound, default 3600).
+# bound, default 3600), MLOCK_WANTED_HOLD (priority window, default 300),
+# MLOCK_WANTED_CYCLE (marker refresh period, default 600).
 set -euo pipefail
 
 LOCK="${MLOCK_FILE:-$HOME/.machine.lock}"
@@ -47,6 +53,8 @@ QUIETREC="$LOCK.quiet"
 TTL_SECONDS="${MLOCK_TTL:-7200}"
 QUIET_WAIT="${MLOCK_QUIET_WAIT:-7200}"
 QUIET_MAX="${MLOCK_QUIET_MAX:-3600}"
+WANTED_HOLD="${MLOCK_WANTED_HOLD:-300}"
+WANTED_CYCLE="${MLOCK_WANTED_CYCLE:-600}"
 RUN_WAIT="${MLOCK_RUN_WAIT:-30}"
 cores=$(nproc 2>/dev/null || echo 4)
 SLOTS="${MLOCK_SLOTS:-$(( cores / 4 > 0 ? cores / 4 : 1 ))}"
@@ -65,6 +73,13 @@ fresh() { # marker exists and is younger than the TTL
 }
 
 wanted_reason() { cat "$WANTED" 2>/dev/null || echo '?'; }
+
+priority() { # the marker is fresh and inside its current priority window
+	local mtime
+	mtime=$(stat -c %Y "$1" 2>/dev/null) || return 1
+	local age=$(($(date +%s) - mtime))
+	[ "$age" -le "$TTL_SECONDS" ] && [ "$age" -lt "$WANTED_HOLD" ]
+}
 quiet_record() { cat "$QUIETREC" 2>/dev/null || echo '?'; }
 slot_file() { printf '%s.slot.%d' "$LOCK" "$1"; }
 
@@ -90,7 +105,7 @@ slot_holders() { # one line per busy slot: what `run` recorded when it took it
 }
 
 blocked_reason() { # prints why heavy work may not start now; exit 0 when it may
-	if fresh "$WANTED"; then
+	if priority "$WANTED"; then
 		echo "quiet wanted: $(wanted_reason)"
 		return 1
 	fi
@@ -111,7 +126,7 @@ run)
 	[ "$#" -ge 1 ] || { echo "mlock run: missing command" >&2; exit 2; }
 	deadline=$(($(date +%s) + RUN_WAIT))
 	while :; do
-		if ! fresh "$WANTED" && flock -n -s "$LOCK" true 2>/dev/null && i=$(free_slot); then
+		if ! priority "$WANTED" && flock -n -s "$LOCK" true 2>/dev/null && i=$(free_slot); then
 			slot=$(slot_file "$i")
 			# Append-open, then lock: the file is truncated only once the
 			# slot is ours, so a concurrent holder's record is never wiped.
@@ -141,7 +156,11 @@ quiet)
 	reason="$1"
 	shift
 	printf '%s (pid %s, since %s)\n' "$reason" "$$" "$(date -Is)" >"$WANTED"
-	trap 'rm -f "$WANTED" "$QUIETREC"' EXIT
+	# The refresher re-opens a priority window every cycle while this
+	# request waits; it dies with the request.
+	( while kill -0 "$$" 2>/dev/null; do sleep "$WANTED_CYCLE"; touch "$WANTED" 2>/dev/null; done ) &
+	refresher=$!
+	trap 'kill "$refresher" 2>/dev/null; rm -f "$WANTED" "$QUIETREC"' EXIT
 	# The exclusive hold rides an fd this shell keeps open, so the drain
 	# (-x waits for every shared holder to release) and the run are one
 	# hold, inherited by the command's process tree.
@@ -150,6 +169,7 @@ quiet)
 		echo "mlock quiet: the machine did not drain within ${QUIET_WAIT}s — $reason" >&2
 		exit "$TEMPFAIL"
 	fi
+	kill "$refresher" 2>/dev/null
 	# Held. The wanted marker has done its job (priority while waiting);
 	# the quiet record now carries the holder for status and check.
 	rm -f "$WANTED"
@@ -176,8 +196,10 @@ check)
 	fi
 	;;
 status)
-	if fresh "$WANTED"; then
-		echo "quiet wanted: $(wanted_reason)"
+	if priority "$WANTED"; then
+		echo "quiet wanted (priority window open, heavy starts held): $(wanted_reason)"
+	elif fresh "$WANTED"; then
+		echo "quiet wanted (priority window lapsed, heavy starts allowed until the next refresh): $(wanted_reason)"
 	elif [ -e "$WANTED" ]; then
 		echo "stale wanted marker (older than ${TTL_SECONDS}s): $(wanted_reason)"
 	fi
@@ -194,7 +216,7 @@ status)
 	[ -z "$holders" ] || printf '%s\n' "$holders"
 	;;
 help|-h|--help)
-	sed -n '2,41p' "$0"
+	sed -n '2,47p' "$0"
 	;;
 *)
 	echo "mlock: unknown command '$1' (run, quiet, check, status)" >&2
