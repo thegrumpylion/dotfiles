@@ -22,20 +22,31 @@
 #                                   hold (MLOCK_RUN_WAIT, 30s), then run
 #                                   <cmd>; exit 75 = rerun the same call
 #   mlock quiet <reason> <cmd...>   run <cmd> with the machine quiet;
-#                                   drain bounded by MLOCK_QUIET_WAIT,
-#                                   7200s
+#                                   drain bounded by MLOCK_QUIET_WAIT
+#                                   (7200s); the hold itself bounded by
+#                                   MLOCK_QUIET_MAX (3600s) — past it the
+#                                   command is interrupted and mlock
+#                                   exits 124, so no quiet run can hold
+#                                   the machine longer than its caller
+#                                   said it needed
 #   mlock check                     exit 0 if heavy work may start now;
 #                                   exit 1 and print why if not
-#   mlock status                    human-readable state
+#   mlock status                    human-readable state, the quiet
+#                                   holder's reason, age and bound
+#                                   included
 #
 # Environment: MLOCK_FILE (default ~/.machine.lock), MLOCK_SLOTS
-# (default nproc/4, at least 1), MLOCK_TTL (wanted marker, default 7200).
+# (default nproc/4, at least 1), MLOCK_TTL (wanted marker, default 7200),
+# MLOCK_QUIET_WAIT (drain bound, default 7200), MLOCK_QUIET_MAX (hold
+# bound, default 3600).
 set -euo pipefail
 
 LOCK="${MLOCK_FILE:-$HOME/.machine.lock}"
 WANTED="$LOCK.wanted"
+QUIETREC="$LOCK.quiet"
 TTL_SECONDS="${MLOCK_TTL:-7200}"
 QUIET_WAIT="${MLOCK_QUIET_WAIT:-7200}"
+QUIET_MAX="${MLOCK_QUIET_MAX:-3600}"
 RUN_WAIT="${MLOCK_RUN_WAIT:-30}"
 cores=$(nproc 2>/dev/null || echo 4)
 SLOTS="${MLOCK_SLOTS:-$(( cores / 4 > 0 ? cores / 4 : 1 ))}"
@@ -54,6 +65,7 @@ fresh() { # marker exists and is younger than the TTL
 }
 
 wanted_reason() { cat "$WANTED" 2>/dev/null || echo '?'; }
+quiet_record() { cat "$QUIETREC" 2>/dev/null || echo '?'; }
 slot_file() { printf '%s.slot.%d' "$LOCK" "$1"; }
 
 free_slot() { # prints the index of a free slot; exit 1 when all are busy
@@ -83,7 +95,7 @@ blocked_reason() { # prints why heavy work may not start now; exit 0 when it may
 		return 1
 	fi
 	if ! flock -n -s "$LOCK" true 2>/dev/null; then
-		echo "machine quiet: exclusive lock held"
+		echo "machine quiet: $(quiet_record)"
 		return 1
 	fi
 	if ! free_slot >/dev/null; then
@@ -129,10 +141,30 @@ quiet)
 	reason="$1"
 	shift
 	printf '%s (pid %s, since %s)\n' "$reason" "$$" "$(date -Is)" >"$WANTED"
-	trap 'rm -f "$WANTED"' EXIT
-	# -x waits for every shared holder to release: the drain.
+	trap 'rm -f "$WANTED" "$QUIETREC"' EXIT
+	# The exclusive hold rides an fd this shell keeps open, so the drain
+	# (-x waits for every shared holder to release) and the run are one
+	# hold, inherited by the command's process tree.
+	exec {qfd}>>"$LOCK"
+	if ! flock -x -w "$QUIET_WAIT" -E "$TEMPFAIL" "$qfd"; then
+		echo "mlock quiet: the machine did not drain within ${QUIET_WAIT}s — $reason" >&2
+		exit "$TEMPFAIL"
+	fi
+	# Held. The wanted marker has done its job (priority while waiting);
+	# the quiet record now carries the holder for status and check.
+	rm -f "$WANTED"
+	# The hold is bounded: a quiet run that outlives its stated bound is
+	# interrupted rather than left holding the machine against everyone.
+	# INT first so a measurement can render its ending; TERM 30s later;
+	# timeout's own KILL after that.
+	timeout --foreground --signal=INT --kill-after=30 "$QUIET_MAX" "$@" &
+	child=$!
+	printf '%s (pid %s, child %s, since %s, bound %ss)\n' "$reason" "$$" "$child" "$(date -Is)" "$QUIET_MAX" >"$QUIETREC"
 	exec_status=0
-	flock -x -w "$QUIET_WAIT" -E "$TEMPFAIL" "$LOCK" "$@" || exec_status=$?
+	wait "$child" || exec_status=$?
+	if [ "$exec_status" -eq 124 ]; then
+		echo "mlock quiet: hold bound of ${QUIET_MAX}s reached — $reason interrupted; a longer quiet run sets MLOCK_QUIET_MAX to what it needs" >&2
+	fi
 	exit "$exec_status"
 	;;
 check)
@@ -150,7 +182,7 @@ status)
 		echo "stale wanted marker (older than ${TTL_SECONDS}s): $(wanted_reason)"
 	fi
 	if ! flock -n -s "$LOCK" true 2>/dev/null; then
-		echo "exclusive holder active (machine quiet)"
+		echo "exclusive holder active (machine quiet): $(quiet_record)"
 	elif ! flock -n -x "$LOCK" true 2>/dev/null; then
 		echo "shared holders active (heavy work running)"
 	else
@@ -162,7 +194,7 @@ status)
 	[ -z "$holders" ] || printf '%s\n' "$holders"
 	;;
 help|-h|--help)
-	sed -n '2,32p' "$0"
+	sed -n '2,41p' "$0"
 	;;
 *)
 	echo "mlock: unknown command '$1' (run, quiet, check, status)" >&2
