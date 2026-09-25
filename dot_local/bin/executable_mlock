@@ -25,7 +25,12 @@
 #
 #   mlock run <cmd...>              wait for a heavy slot and a shared
 #                                   hold (MLOCK_RUN_WAIT, 30s), then run
-#                                   <cmd>; exit 75 = rerun the same call
+#                                   <cmd>; exit 75 = rerun the same call.
+#                                   Waiters queue first come, first
+#                                   served: a ticket under $LOCK.q, and
+#                                   only the oldest live ticket may take a
+#                                   freed slot, so a newcomer never jumps
+#                                   a session that has waited longer
 #   mlock quiet <reason> <cmd...>   run <cmd> with the machine quiet;
 #                                   drain bounded by MLOCK_QUIET_WAIT
 #                                   (7200s); the hold itself bounded by
@@ -50,6 +55,7 @@ set -euo pipefail
 LOCK="${MLOCK_FILE:-$HOME/.machine.lock}"
 WANTED="$LOCK.wanted"
 QUIETREC="$LOCK.quiet"
+QDIR="$LOCK.q"
 TTL_SECONDS="${MLOCK_TTL:-7200}"
 QUIET_WAIT="${MLOCK_QUIET_WAIT:-7200}"
 QUIET_MAX="${MLOCK_QUIET_MAX:-3600}"
@@ -101,6 +107,31 @@ free_slot() { # prints the index of a free slot; exit 1 when all are busy
 	return 1
 }
 
+ticket=""
+take_ticket() { # join the waiters' queue; the ticket names its owner
+	mkdir -p "$QDIR"
+	ticket="$QDIR/$(date +%s%N)-$$"
+	echo "$$" >"$ticket"
+}
+
+drop_ticket() { [ -z "$ticket" ] || rm -f "$ticket"; ticket=""; }
+
+live_tickets() { # the queue in order, dead or stale owners swept away
+	local f p
+	for f in $(command ls "$QDIR" 2>/dev/null | sort); do
+		p=$(cat "$QDIR/$f" 2>/dev/null)
+		if [ -n "$p" ] && kill -0 "$p" 2>/dev/null && fresh "$QDIR/$f"; then
+			printf '%s\n' "$QDIR/$f"
+		else
+			rm -f "$QDIR/$f"
+		fi
+	done
+}
+
+head_is_me() { # true when no live waiter queued before this one
+	[ "$(live_tickets | head -n 1)" = "$ticket" ]
+}
+
 slot_holders() { # one line per busy slot: what `run` recorded when it took it
 	local i f
 	for ((i = 0; i < SLOTS; i++)); do
@@ -132,8 +163,10 @@ run)
 	shift
 	[ "$#" -ge 1 ] || { echo "mlock run: missing command" >&2; exit 2; }
 	deadline=$(($(date +%s) + RUN_WAIT))
+	take_ticket
+	trap 'drop_ticket' EXIT
 	while :; do
-		if ! priority "$WANTED" && flock -n -s "$LOCK" true 2>/dev/null && i=$(free_slot); then
+		if head_is_me && ! priority "$WANTED" && flock -n -s "$LOCK" true 2>/dev/null && i=$(free_slot); then
 			slot=$(slot_file "$i")
 			# Append-open, then lock: the file is truncated only once the
 			# slot is ours, so a concurrent holder's record is never wiped.
@@ -146,12 +179,15 @@ run)
 				# The slot fd is inherited through the exec: the slot stays
 				# taken for the whole process tree and frees when it exits.
 				# A quiet holder arriving meanwhile waits on our shared hold.
+				drop_ticket
+				trap - EXIT
 				exec flock -s -w "$rem" -E "$TEMPFAIL" "$LOCK" "$@"
 			fi
 			exec {sfd}>&-
 		fi
 		if [ "$(date +%s)" -ge "$deadline" ]; then
-			echo "mlock run: could not start within ${RUN_WAIT}s — $(blocked_reason || true)" >&2
+			waiting=$(live_tickets | grep -c . || true)
+			echo "mlock run: could not start within ${RUN_WAIT}s — $(blocked_reason || true); waiters queued: $waiting" >&2
 			exit "$TEMPFAIL"
 		fi
 		sleep 1
@@ -220,10 +256,12 @@ status)
 	holders=$(slot_holders)
 	busy=$(printf '%s' "$holders" | grep -c 'slot' || true)
 	echo "heavy slots: $busy of $SLOTS busy"
+	waiting=$(live_tickets | grep -c . || true)
+	[ "$waiting" -eq 0 ] || echo "waiters queued: $waiting (first come, first served)"
 	[ -z "$holders" ] || printf '%s\n' "$holders"
 	;;
 help|-h|--help)
-	sed -n '2,47p' "$0"
+	sed -n '2,52p' "$0"
 	;;
 *)
 	echo "mlock: unknown command '$1' (run, quiet, check, status)" >&2
