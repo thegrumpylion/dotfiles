@@ -1,0 +1,118 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "semrel": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "semrel",
+        "mcp"
+      ]
+    },
+    "taskfile": {
+      "enabled": false,
+      "type": "local",
+      "environment": {
+        "TASK_X_MCP": "1"
+      },
+      "command": [
+        "task",
+        "--mcp"
+      ]
+    },
+    "jot": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "jot",
+        "mcp"
+      ]
+    },
+    "jira": {
+      "enabled": false,
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "react-aria": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "bunx",
+        "@react-aria/mcp@latest"
+      ]
+    },
+    "gmail": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "google-mcp",
+        "gmail",
+        "--allow-write-dir",
+        "/home/nikolas/Downloads"
+      ]
+    },
+    "drive": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "google-mcp",
+        "drive",
+        "--allow-write-dir",
+        "/home/nikolas/Downloads"
+      ]
+    },
+    "calendar": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "google-mcp",
+        "calendar"
+      ]
+    },
+    "chrome": {
+      "enabled": true,
+      "type": "local",
+      "command": [
+        "chromedp-mcp",
+        "--download-dir",
+        "/home/nikolas/Downloads",
+        "--user-data-dir",
+        "/home/nikolas/.config/chromedp-mcp",
+        "--allowed-profiles",
+        "candosa,glt"
+      ]
+    },
+    "blender": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "--project",
+        "/home/nikolas/repos/github.com/thegrumpylion/blender-mcp",
+        "python",
+        "-m",
+        "blender_mcp.server"
+      ]
+    },
+    "stipulator": {
+      "enabled": true,
+      "type": "local",
+      "command": [
+        "stipulator",
+        "mcp"
+      ]
+    },
+    "gomutant": {
+      "enabled": true,
+      "type": "local",
+      "command": [
+        "gomutant",
+        "mcp"
+      ]
+    }
+  },
+  "experimental": {
+    "mcp_timeout": 18000000
+  }
+}

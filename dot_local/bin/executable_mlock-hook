@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""PreToolUse hook for Bash: heavy commands run only through mlock.
+"""Bash gate for agent sessions: heavy commands run only through mlock.
 
-Reads the hook JSON on stdin. A command that is not heavy, or that is
-already wrapped in `mlock run` / `mlock quiet`, is admitted silently
-(exit 0). An unwrapped heavy command is denied with a reason that names
-the wrapper and the lock's current state, so the agent wraps it instead
-of retrying unwrapped. A broken lock tool never bricks the session."""
+Reads the hook JSON on stdin (Claude Code's PreToolUse shape, which the
+opencode plugin reproduces) and answers on stdout. A command that is not
+heavy, or that is already wrapped in `mlock run` / `mlock quiet`, is
+admitted silently (exit 0). An unwrapped heavy command is denied with a
+reason that names the wrapper and the lock's current state, so the agent
+wraps it instead of retrying unwrapped. A broken lock tool never bricks
+the session."""
 import json
 import os
 import re
@@ -40,6 +42,18 @@ QUIET_MISUSE = re.compile(
     r"|stipulator\s+(?:check|gate|verify|compile)|task\s+(?:gen|test|build))\b"
 )
 
+
+def deny(reason):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": reason,
+        }
+    }))
+    sys.exit(0)
+
+
 try:
     payload = json.load(sys.stdin)
 except Exception:
@@ -52,19 +66,12 @@ HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2[ \t]*(?=\n|$)", 
 command = HEREDOC.sub("<<heredoc", command)
 misuse = QUIET_MISUSE.search(command)
 if misuse and "-bench" not in command:
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": (
-                "quiet mode is for benchmarks alone: `" + misuse.group(1) + "` is "
-                "ordinary heavy work and takes a slot, never the whole machine. "
-                "Run it as `mlock run timeout 570 <cmd>`; `mlock quiet` is for "
-                "pew/cerebro measurements and `-bench` runs only."
-            ),
-        }
-    }))
-    sys.exit(0)
+    deny(
+        "quiet mode is for benchmarks alone: `" + misuse.group(1) + "` is "
+        "ordinary heavy work and runs as a shared holder, never with the "
+        "whole machine. Run it as `mlock run <cmd>`; `mlock quiet` is for "
+        "pew/cerebro measurements and `-bench` runs only."
+    )
 if not HEAVY.search(command) or WRAPPED.search(command):
     sys.exit(0)
 state = "lock state unknown"
@@ -75,16 +82,10 @@ try:
     state = probe.stdout.strip() or state
 except Exception:
     pass  # a broken lock tool must never brick the session
-print(json.dumps({
-    "hookSpecificOutput": {
-        "hookEventName": "PreToolUse",
-        "permissionDecision": "deny",
-        "permissionDecisionReason": (
-            "heavy command not wrapped in mlock. Run it as "
-            "`mlock run timeout 570 <cmd>`: it waits for a heavy slot; "
-            "exit 75 means rerun the same call. Measurements run as "
-            "`mlock quiet \"<reason>\" <cmd>`. Never gate on load average. "
-            "Lock now: " + state
-        ),
-    }
-}))
+deny(
+    "heavy command not wrapped in mlock. Run it as `mlock run <cmd>`: it "
+    "waits while a quiet run is wanted or held, then runs the command as "
+    "a shared holder, so give the call a timeout sized for the work plus "
+    "that wait or run it in the background. Measurements run as "
+    "`mlock quiet \"<reason>\" <cmd>`. Lock now: " + state
+)

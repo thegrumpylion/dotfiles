@@ -1,146 +1,85 @@
 #!/usr/bin/env bash
 # mlock — machine-sharing lock for concurrent agent sessions.
 #
-# Heavy work takes one of N slots (N = cores/4, at least 1) and a shared
-# hold on the machine lock; a quiet need (benchmark, measurement) takes
-# the machine lock exclusively, which waits for every running heavy
-# holder to finish (the drain) and excludes new ones for its duration.
-# flock(2) semantics give crash-release for free: a dead holder's locks
-# vanish with its process. A `.wanted` marker gives quiet priority —
-# flock has none — and carries the reason; its TTL bounds a crashed
-# quiet-seeker. The priority comes in windows, not for the whole wait:
-# the marker holds new heavy work off for MLOCK_WANTED_HOLD seconds
-# (300) after each refresh, and the waiting quiet refreshes it every
-# MLOCK_WANTED_CYCLE seconds (600), so a quiet request stalled behind a
-# long heavy holder blocks the other slots half the time instead of
-# starving every session until that holder finishes.
+# A reader-writer lock over the machine. Heavy work (tests, builds,
+# campaigns) runs as a shared holder; a quiet need (benchmark,
+# measurement) takes the lock exclusively, which waits for every running
+# shared holder to finish (the drain) and excludes new ones for its
+# duration. flock(2) semantics give crash-release for free: a dead
+# holder's lock vanishes with its process.
 #
-# Every wait is bounded so one call fits inside one agent tool call; on
-# timeout mlock exits 75 (EX_TEMPFAIL) with the reason on stderr and the
-# caller reruns the same call. `run` keeps its bound short so the work
-# it starts always has a fresh call budget of its own; a background
-# caller raises MLOCK_RUN_WAIT. The load average is never consulted: it
-# is a low-pass filter of everyone's work and never reads free beside a
-# steady neighbour.
+# flock has no writer priority, so a waiting quiet request leaves a
+# `.wanted` marker carrying its reason: new heavy work holds off while
+# the marker is inside its priority window (MLOCK_WANTED_HOLD seconds
+# after each refresh, 300), and the waiting quiet refreshes it every
+# MLOCK_WANTED_CYCLE seconds (600). The priority therefore comes in
+# windows: a quiet stalled behind a long heavy holder blocks the other
+# sessions half the time instead of starving them until that holder
+# finishes. The marker's TTL bounds a crashed quiet-seeker.
 #
-#   mlock run <cmd...>              wait for a heavy slot and a shared
-#                                   hold (MLOCK_RUN_WAIT, 30s), then run
-#                                   <cmd>; exit 75 = rerun the same call.
-#                                   Waiters queue first come, first
-#                                   served: a ticket under $LOCK.q, and
-#                                   only the oldest live ticket may take a
-#                                   freed slot, so a newcomer never jumps
-#                                   a session that has waited longer
+#   mlock run <cmd...>              wait while quiet is wanted or held,
+#                                   then run <cmd> as a shared holder;
+#                                   the wait is unbounded, so a call
+#                                   that may wait long runs with a
+#                                   timeout sized for it or in the
+#                                   background
 #   mlock quiet <reason> <cmd...>   run <cmd> with the machine quiet;
-#                                   drain bounded by MLOCK_QUIET_WAIT
-#                                   (7200s); the hold itself bounded by
-#                                   MLOCK_QUIET_MAX (3600s) — past it the
-#                                   command is interrupted and mlock
-#                                   exits 124, so no quiet run can hold
-#                                   the machine longer than its caller
-#                                   said it needed
+#                                   the drain is bounded by
+#                                   MLOCK_QUIET_WAIT (7200s; exit 75 =
+#                                   rerun the same call), the hold by
+#                                   MLOCK_QUIET_MAX (3600s) — past it
+#                                   the command is interrupted and
+#                                   mlock exits 124, so no quiet run
+#                                   holds the machine longer than its
+#                                   caller said it needed
 #   mlock check                     exit 0 if heavy work may start now;
 #                                   exit 1 and print why if not
 #   mlock status                    human-readable state, the quiet
 #                                   holder's reason, age and bound
 #                                   included
 #
-# Environment: MLOCK_FILE (default ~/.machine.lock), MLOCK_SLOTS
-# (default ~/.config/mlock/slots, else nproc/4, at least 1), MLOCK_TTL (wanted marker, default 7200),
-# MLOCK_QUIET_WAIT (drain bound, default 7200), MLOCK_QUIET_MAX (hold
-# bound, default 3600), MLOCK_WANTED_HOLD (priority window, default 300),
-# MLOCK_WANTED_CYCLE (marker refresh period, default 600).
+# Environment: MLOCK_FILE (default ~/.machine.lock), MLOCK_TTL (wanted
+# marker, default 7200), MLOCK_QUIET_WAIT (drain bound, default 7200),
+# MLOCK_QUIET_MAX (hold bound, default 3600), MLOCK_WANTED_HOLD
+# (priority window, default 300), MLOCK_WANTED_CYCLE (marker refresh
+# period, default 600).
 set -euo pipefail
 
 LOCK="${MLOCK_FILE:-$HOME/.machine.lock}"
 WANTED="$LOCK.wanted"
 QUIETREC="$LOCK.quiet"
-QDIR="$LOCK.q"
 TTL_SECONDS="${MLOCK_TTL:-7200}"
 QUIET_WAIT="${MLOCK_QUIET_WAIT:-7200}"
 QUIET_MAX="${MLOCK_QUIET_MAX:-3600}"
 WANTED_HOLD="${MLOCK_WANTED_HOLD:-300}"
 WANTED_CYCLE="${MLOCK_WANTED_CYCLE:-600}"
-RUN_WAIT="${MLOCK_RUN_WAIT:-30}"
-cores=$(nproc 2>/dev/null || echo 4)
-# The slot count: MLOCK_SLOTS, else the host's ~/.config/mlock/slots (a
-# per-machine choice chezmoi does not manage), else cores/4, at least 1.
-SLOTS="${MLOCK_SLOTS:-}"
-if [ -z "$SLOTS" ] && [ -r "$HOME/.config/mlock/slots" ]; then
-	SLOTS=$(tr -dc '0-9' <"$HOME/.config/mlock/slots")
-fi
-SLOTS="${SLOTS:-$(( cores / 4 > 0 ? cores / 4 : 1 ))}"
-[ "$SLOTS" -ge 1 ] 2>/dev/null || SLOTS=1
 TEMPFAIL=75
 
 touch "$LOCK"
 
-fresh() { # marker exists and is younger than the TTL
+marker_age() { # prints the marker's age in seconds; exit 1 when absent
 	# One stat is both the existence probe and the mtime read: a marker
 	# removed concurrently (a quiet holder's EXIT trap) must read as
 	# "not wanted", never crash the arithmetic.
 	local mtime
 	mtime=$(stat -c %Y "$1" 2>/dev/null) || return 1
-	local age=$(($(date +%s) - mtime))
+	echo $(($(date +%s) - mtime))
+}
+
+fresh() { # marker exists and is younger than the TTL
+	local age
+	age=$(marker_age "$1") || return 1
 	[ "$age" -le "$TTL_SECONDS" ]
 }
 
-wanted_reason() { cat "$WANTED" 2>/dev/null || echo '?'; }
-
 priority() { # the marker is fresh and inside its current priority window
-	local mtime
-	mtime=$(stat -c %Y "$1" 2>/dev/null) || return 1
-	local age=$(($(date +%s) - mtime))
+	local age
+	age=$(marker_age "$1") || return 1
 	[ "$age" -le "$TTL_SECONDS" ] && [ "$age" -lt "$WANTED_HOLD" ]
 }
+
+wanted_reason() { cat "$WANTED" 2>/dev/null || echo '?'; }
 quiet_record() { cat "$QUIETREC" 2>/dev/null || echo '?'; }
-slot_file() { printf '%s.slot.%d' "$LOCK" "$1"; }
-
-free_slot() { # prints the index of a free slot; exit 1 when all are busy
-	local i
-	for ((i = 0; i < SLOTS; i++)); do
-		if flock -n -x "$(slot_file "$i")" true 2>/dev/null; then
-			echo "$i"
-			return 0
-		fi
-	done
-	return 1
-}
-
-ticket=""
-take_ticket() { # join the waiters' queue; the ticket names its owner
-	mkdir -p "$QDIR"
-	ticket="$QDIR/$(date +%s%N)-$$"
-	echo "$$" >"$ticket"
-}
-
-drop_ticket() { [ -z "$ticket" ] || rm -f "$ticket"; ticket=""; }
-
-live_tickets() { # the queue in order, dead or stale owners swept away
-	local f p
-	for f in $(command ls "$QDIR" 2>/dev/null | sort); do
-		p=$(cat "$QDIR/$f" 2>/dev/null)
-		if [ -n "$p" ] && kill -0 "$p" 2>/dev/null && fresh "$QDIR/$f"; then
-			printf '%s\n' "$QDIR/$f"
-		else
-			rm -f "$QDIR/$f"
-		fi
-	done
-}
-
-head_is_me() { # true when no live waiter queued before this one
-	[ "$(live_tickets | head -n 1)" = "$ticket" ]
-}
-
-slot_holders() { # one line per busy slot: what `run` recorded when it took it
-	local i f
-	for ((i = 0; i < SLOTS; i++)); do
-		f=$(slot_file "$i")
-		if [ -e "$f" ] && ! flock -n -x "$f" true 2>/dev/null; then
-			printf '  slot %d: %s\n' "$i" "$(head -c 200 "$f" 2>/dev/null | tr '\n' ' ')"
-		fi
-	done
-}
 
 blocked_reason() { # prints why heavy work may not start now; exit 0 when it may
 	if priority "$WANTED"; then
@@ -151,10 +90,6 @@ blocked_reason() { # prints why heavy work may not start now; exit 0 when it may
 		echo "machine quiet: $(quiet_record)"
 		return 1
 	fi
-	if ! free_slot >/dev/null; then
-		printf 'all %d heavy slots busy:\n%s' "$SLOTS" "$(slot_holders)"
-		return 1
-	fi
 	return 0
 }
 
@@ -162,36 +97,20 @@ case "${1:-help}" in
 run)
 	shift
 	[ "$#" -ge 1 ] || { echo "mlock run: missing command" >&2; exit 2; }
-	deadline=$(($(date +%s) + RUN_WAIT))
-	take_ticket
-	trap 'drop_ticket' EXIT
+	# Wait until no priority window is open and no exclusive holder is
+	# active, checked together: a marker can appear while blocking on
+	# the lock, so loop until both clear in one pass.
 	while :; do
-		if head_is_me && ! priority "$WANTED" && flock -n -s "$LOCK" true 2>/dev/null && i=$(free_slot); then
-			slot=$(slot_file "$i")
-			# Append-open, then lock: the file is truncated only once the
-			# slot is ours, so a concurrent holder's record is never wiped.
-			exec {sfd}>>"$slot"
-			if flock -n -x "$sfd"; then
-				: >"$slot"
-				printf 'pid %s since %s: %s\n' "$$" "$(date -Is)" "$*" >&"$sfd"
-				rem=$((deadline - $(date +%s)))
-				[ "$rem" -gt 0 ] || rem=1
-				# The slot fd is inherited through the exec: the slot stays
-				# taken for the whole process tree and frees when it exits.
-				# A quiet holder arriving meanwhile waits on our shared hold.
-				drop_ticket
-				trap - EXIT
-				exec flock -s -w "$rem" -E "$TEMPFAIL" "$LOCK" "$@"
-			fi
-			exec {sfd}>&-
+		if priority "$WANTED"; then
+			sleep 5
+			continue
 		fi
-		if [ "$(date +%s)" -ge "$deadline" ]; then
-			waiting=$(live_tickets | grep -c . || true)
-			echo "mlock run: could not start within ${RUN_WAIT}s — $(blocked_reason || true); waiters queued: $waiting" >&2
-			exit "$TEMPFAIL"
+		if flock -n -s "$LOCK" true 2>/dev/null; then
+			break
 		fi
-		sleep 1
+		flock -s "$LOCK" true
 	done
+	exec flock -s "$LOCK" "$@"
 	;;
 quiet)
 	shift
@@ -203,7 +122,7 @@ quiet)
 	# request waits; it dies with the request.
 	( while kill -0 "$$" 2>/dev/null; do sleep "$WANTED_CYCLE"; touch "$WANTED" 2>/dev/null; done ) &
 	refresher=$!
-	trap 'kill "$refresher" 2>/dev/null; rm -f "$WANTED" "$QUIETREC"' EXIT
+	trap 'kill "$refresher" 2>/dev/null || true; rm -f "$WANTED" "$QUIETREC"' EXIT
 	# The exclusive hold rides an fd this shell keeps open, so the drain
 	# (-x waits for every shared holder to release) and the run are one
 	# hold, inherited by the command's process tree.
@@ -212,7 +131,7 @@ quiet)
 		echo "mlock quiet: the machine did not drain within ${QUIET_WAIT}s — $reason" >&2
 		exit "$TEMPFAIL"
 	fi
-	kill "$refresher" 2>/dev/null
+	kill "$refresher" 2>/dev/null || true
 	# Held. The wanted marker has done its job (priority while waiting);
 	# the quiet record now carries the holder for status and check.
 	rm -f "$WANTED"
@@ -253,15 +172,9 @@ status)
 	else
 		echo "no holders"
 	fi
-	holders=$(slot_holders)
-	busy=$(printf '%s' "$holders" | grep -c 'slot' || true)
-	echo "heavy slots: $busy of $SLOTS busy"
-	waiting=$(live_tickets | grep -c . || true)
-	[ "$waiting" -eq 0 ] || echo "waiters queued: $waiting (first come, first served)"
-	[ -z "$holders" ] || printf '%s\n' "$holders"
 	;;
 help|-h|--help)
-	sed -n '2,52p' "$0"
+	sed -n '2,45p' "$0"
 	;;
 *)
 	echo "mlock: unknown command '$1' (run, quiet, check, status)" >&2
