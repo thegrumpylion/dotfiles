@@ -4,8 +4,8 @@
 Reads the hook JSON on stdin (Claude Code's PreToolUse shape for the Agent
 tool) and answers on stdout. The capacity reading is `subshuffler status
 --json`: the selected account's ETA to its nearest threshold and the fleet's
-mix hint. A spawn is denied when the ETA is shorter than one round (the
-agent would die at the provider's limit before the daemon rotates), or when
+mix hint. A spawn is denied when the ETA is shorter than one round and no other account
+has room to rotate onto (the agent would die at the provider's limit), or when
 the hint says Fable is at pace and only the total has room while the spawn
 asks for Fable — the reason names the model to use instead. Every other
 spawn is admitted with the reading attached as context. A missing or older
@@ -82,7 +82,7 @@ eta = decision.get("selected_eta_seconds")
 hint = fleet.get("hint") or "no-reading"
 line = (
     "capacity: %s five-hour %.0f%% (resets %s), Fable burn %s eta %s, total burn %s "
-    "eta %s; fleet Fable %s of pace %s, total %s of pace %s; hint %s"
+    "eta %s; fleet Fable %s of pace %s, total %s of pace %s; accounts with room %s; hint %s"
     % (
         selected,
         (decision.get("selected_five_hour") or 0) * 100,
@@ -95,18 +95,21 @@ line = (
         rate(fleet.get("fable_pace")),
         rate(fleet.get("total_burn")),
         rate(fleet.get("total_pace")),
+        "—" if fleet.get("accounts_with_room") is None else fleet.get("accounts_with_room"),
         hint,
     )
 )
 
 minimum = int(os.environ.get("SPAWN_GATE_MIN_ETA", "3600"))
-if eta is not None and eta < minimum:
+room = fleet.get("accounts_with_room")
+if eta is not None and eta < minimum and room == 0:
     answer(
         "deny",
-        "no capacity for a new agent: the selected account %s reaches a threshold in %s, "
-        "shorter than one round (%s), and the daemon rotates only at the threshold — the "
-        "agent would die at the provider's limit. Wait for the rotation or a window reset "
-        "(`subshuffler status`), or shorten the round. %s" % (selected, humane(eta), humane(minimum), line),
+        "no capacity for a new agent: the selected account %s reaches its limit in %s, "
+        "shorter than one round (%s), and no other account has both weekly room and a free "
+        "five-hour window to rotate onto — the agent would die at the provider's limit. Wait "
+        "for a window reset (`subshuffler status` shows each reset), or shorten the round. %s"
+        % (selected, humane(eta), humane(minimum), line),
     )
 
 model = ((payload.get("tool_input") or {}).get("model") or "").lower()
