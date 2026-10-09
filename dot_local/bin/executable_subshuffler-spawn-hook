@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Agent-spawn gate for agent sessions: a subagent starts only with capacity.
+
+Reads the hook JSON on stdin (Claude Code's PreToolUse shape for the Agent
+tool) and answers on stdout. The capacity reading is `subshuffler status
+--json`: the selected account's ETA to its nearest threshold and the fleet's
+mix hint. A spawn is denied when the ETA is shorter than one round (the
+agent would die at the provider's limit before the daemon rotates), or when
+the hint says Fable is at pace and only the total has room while the spawn
+asks for Fable — the reason names the model to use instead. Every other
+spawn is admitted with the reading attached as context. A missing or older
+subshuffler, a failed read or a malformed document never bricks the
+session: the spawn is admitted silently.
+
+Environment: SPAWN_GATE_OFF=1 admits everything; SPAWN_GATE_MIN_ETA (seconds,
+default 3600) is one round's length; SUBSHUFFLER_STATUS_JSON names a file
+read instead of the daemon (tests)."""
+import json
+import os
+import subprocess
+import sys
+
+SUBSHUFFLER = os.path.expanduser("~/.local/bin/subshuffler")
+FABLE_MODELS = ("fable",)
+
+
+def answer(decision, reason=None, context=None):
+    output = {"hookEventName": "PreToolUse"}
+    if decision:
+        output["permissionDecision"] = decision
+    if reason:
+        output["permissionDecisionReason"] = reason
+    if context:
+        output["additionalContext"] = context
+    print(json.dumps({"hookSpecificOutput": output}))
+    sys.exit(0)
+
+
+def reading():
+    path = os.environ.get("SUBSHUFFLER_STATUS_JSON")
+    if path:
+        with open(path) as handle:
+            return json.load(handle)
+    probe = subprocess.run(
+        [SUBSHUFFLER, "status", "--json"], capture_output=True, text=True, timeout=10
+    )
+    if probe.returncode != 0:
+        return None
+    return json.loads(probe.stdout)
+
+
+def humane(seconds):
+    if seconds is None:
+        return "—"
+    seconds = int(seconds)
+    if seconds < 3600:
+        return "%dm" % (seconds // 60)
+    return "%dh%02dm" % (seconds // 3600, (seconds % 3600) // 60)
+
+
+def rate(value):
+    return "—" if value is None else "%.1f/h" % (value * 100)
+
+
+if os.environ.get("SPAWN_GATE_OFF") == "1":
+    sys.exit(0)
+try:
+    payload = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+if payload.get("tool_name") != "Agent":
+    sys.exit(0)
+try:
+    status = reading()
+    decision = status["decision"]
+    fleet = status["fleet"]
+except Exception:
+    sys.exit(0)  # no reading: the gate never bricks the session
+
+selected = decision.get("selected") or "none"
+eta = decision.get("selected_eta_seconds")
+hint = fleet.get("hint") or "no-reading"
+line = (
+    "capacity: %s five-hour %.0f%% (resets %s), Fable burn %s eta %s, total burn %s "
+    "eta %s; fleet Fable %s of pace %s, total %s of pace %s; hint %s"
+    % (
+        selected,
+        (decision.get("selected_five_hour") or 0) * 100,
+        decision.get("selected_five_hour_reset") or "—",
+        rate(decision.get("selected_fable_burn")),
+        humane(decision.get("selected_fable_eta_seconds")),
+        rate(decision.get("selected_total_burn")),
+        humane(decision.get("selected_total_eta_seconds")),
+        rate(fleet.get("fable_burn")),
+        rate(fleet.get("fable_pace")),
+        rate(fleet.get("total_burn")),
+        rate(fleet.get("total_pace")),
+        hint,
+    )
+)
+
+minimum = int(os.environ.get("SPAWN_GATE_MIN_ETA", "3600"))
+if eta is not None and eta < minimum:
+    answer(
+        "deny",
+        "no capacity for a new agent: the selected account %s reaches a threshold in %s, "
+        "shorter than one round (%s), and the daemon rotates only at the threshold — the "
+        "agent would die at the provider's limit. Wait for the rotation or a window reset "
+        "(`subshuffler status`), or shorten the round. %s" % (selected, humane(eta), humane(minimum), line),
+    )
+
+model = ((payload.get("tool_input") or {}).get("model") or "").lower()
+asks_fable = model == "" or any(name in model for name in FABLE_MODELS)
+if hint == "add-non-fable" and asks_fable:
+    answer(
+        "deny",
+        "Fable is at pace and only the total weekly has room: spawn this agent on a "
+        "non-Fable model (pass model: \"opus\") so the total is spent without starving the "
+        "Fable budget, or pass SPAWN_GATE_OFF=1 for a Fable spawn you need regardless. " + line,
+    )
+answer(None, context=line)
