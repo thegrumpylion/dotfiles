@@ -4,11 +4,13 @@
 Reads the hook JSON on stdin (Claude Code's PreToolUse shape for the Agent
 tool) and answers on stdout. The capacity reading is `subshuffler status
 --json`: the selected account's ETA to its nearest threshold and the fleet's
-mix hint. A spawn is denied when the ETA is shorter than one round and no other account
-has room to rotate onto (the agent would die at the provider's limit), or when
-the hint says Fable is at pace and only the total has room while the spawn
-asks for Fable — the reason names the model to use instead. Every other
-spawn is admitted with the reading attached as context. A missing or older
+mix hint. A spawn is denied only when the ETA is shorter than one round and no other
+account has room to rotate onto (the agent would die at the provider's limit).
+Every other spawn is admitted with the reading attached as context; when the
+hint says Fable is at pace and only the total has room while the spawn asks
+for Fable, the context nudges toward a non-Fable model where the choice is
+free — the hint steers, it never blocks: points unspent at a deadline are the
+only waste, early exhaustion is none. A missing or older
 subshuffler, a failed read or a malformed document never bricks the
 session: the spawn is admitted silently.
 
@@ -115,10 +117,9 @@ if eta is not None and eta < minimum and room == 0:
 model = ((payload.get("tool_input") or {}).get("model") or "").lower()
 asks_fable = model == "" or any(name in model for name in FABLE_MODELS)
 if hint == "add-non-fable" and asks_fable:
-    answer(
-        "deny",
-        "Fable is at pace and only the total weekly has room: spawn this agent on a "
-        "non-Fable model (pass model: \"opus\") so the total is spent without starving the "
-        "Fable budget, or pass SPAWN_GATE_OFF=1 for a Fable spawn you need regardless. " + line,
+    line += (
+        " — Fable is at pace and only the total weekly has room: where the next agent's "
+        "model is a choice (a review, a mechanical round), prefer model: \"opus\"; a Fable "
+        "round on the critical path is fine, early exhaustion is not waste."
     )
 answer(None, context=line)
