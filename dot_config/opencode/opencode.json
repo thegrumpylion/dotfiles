@@ -112,6 +112,22 @@
       ]
     }
   },
+  "providers": {
+    "openai": {
+      "models": {
+        "gpt-6-astra": {
+          "limit": {
+            "context": 1050000,
+            "input": 922000,
+            "output": 128000
+          }
+        }
+      }
+    }
+  },
+  "compaction": {
+    "buffer": 20000
+  },
   "experimental": {
     "mcp_timeout": 18000000
   }
