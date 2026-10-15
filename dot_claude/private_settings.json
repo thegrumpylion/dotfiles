@@ -39,17 +39,6 @@
             "statusMessage": "Checking the machine lock"
           }
         ]
-      },
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/subshuffler-spawn-hook",
-            "timeout": 15,
-            "statusMessage": "Checking subscription capacity"
-          }
-        ]
       }
     ]
   },
