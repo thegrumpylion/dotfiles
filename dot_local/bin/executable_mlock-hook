@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Bash gate for agent sessions: heavy commands run only through mlock.
 
-Reads the hook JSON on stdin (Claude Code's PreToolUse shape, which the
-opencode plugin reproduces) and answers on stdout. A command that is not
-heavy, or that is already wrapped in `mlock run` / `mlock quiet`, is
-admitted silently (exit 0). An unwrapped heavy command is denied with a
-reason that names the wrapper and the lock's current state, so the agent
-wraps it instead of retrying unwrapped. A broken lock tool never bricks
-the session."""
+Reads the hook JSON on stdin (Claude Code / opencode `tool_input.command`
+or Antigravity `toolCall.args.CommandLine`) and answers on stdout. A command
+that is not heavy, or that is already wrapped in `mlock run` / `mlock quiet`,
+is admitted. An unwrapped heavy command is denied with a reason that names
+the wrapper and the lock's current state, so the agent wraps it instead of
+retrying unwrapped. A broken lock tool never bricks the session."""
 import json
 import os
 import re
@@ -16,76 +15,147 @@ import sys
 
 MLOCK = os.path.expanduser("~/.local/bin/mlock")
 
+CLAUSE_START = r"(?:^|[;&|(\n]\s*)"
+MODIFIERS = (
+    r"(?:"
+    r"exec\s+"
+    r"|timeout\s+(?:-\S+\s+)*\S+\s+"
+    r"|env\s+"
+    r"|(?:-u|--unset)\s+\S+\s+"
+    r"|--unset=\S+\s+"
+    r"|[A-Za-z_][A-Za-z0-9_]*=(?:\"[^\"]*\"|'[^']*'|\S*)\s+"
+    r")*"
+)
+ORDINARY_HEAVY = (
+    r"go\s+(?:test|build|vet|run|generate)"
+    r"|gomutant\s+(?:run|ephemeral)"
+    r"|stipulator\s+(?:check|gate|verify|compile)"
+    r"|task\s+(?:gen|test|build)"
+)
+ALL_HEAVY = r"(?:" + ORDINARY_HEAVY + r"|pew\s+(?:run|verify|stat)|cerebro\s)\b"
+
 # A heavy program in command position: at the start, after a separator
-# or subshell, or behind exec/timeout/env-assignment prefixes — never a
-# bare word inside a path or an argument.
-PREFIX = (
-    r"(?:^|[;&|(\n]\s*|\bexec\s+|\btimeout\s+(?:\S+\s+){1,3})"
-    r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*"
+# or subshell, or behind exec/timeout/env prefixes — never a bare word
+# inside a path or an argument.
+HEAVY = re.compile(CLAUSE_START + MODIFIERS + ALL_HEAVY)
+
+# Each mlock-wrapped clause covers up to the next unquoted shell separator.
+MLOCK_BIN = r"(?:[\w.~$/-]*/)?mlock"
+SHELL_CLAUSE_TAIL = r"(?:\"[^\"]*\"|'[^']*'|[^;&|\n)'\"])*"
+WRAPPED_CLAUSE = re.compile(
+    CLAUSE_START
+    + MODIFIERS
+    + MLOCK_BIN
+    + r"\s+(?:run|quiet\s+(?:\"[^\"]*\"|'[^']*'|\S+))\b"
+    + SHELL_CLAUSE_TAIL
 )
-HEAVY = re.compile(
-    PREFIX
-    + r"(?:go\s+(?:test|build|vet|run)|gomutant\s+(?:run|ephemeral)"
-    r"|stipulator\s+(?:check|gate|verify)|task\s+(?:gen|test|build)"
-    r"|pew\s+(?:run|stat)|cerebro\s)\b"
-)
-WRAPPED = re.compile(r"\bmlock\s+(?:run|quiet)\b")
+
 # Quiet mode is for benchmarks alone. A build, test, vet, generation, probe
 # or check wrapped in `mlock quiet` takes the whole machine for ordinary
 # heavy work and starves every other session; it is denied, `-bench` runs
 # excepted.
 QUIET_MISUSE = re.compile(
-    r"\bmlock\s+quiet\s+(?:\"[^\"]*\"|'[^']*'|\S+)\s+"
-    r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:env\s+(?:\S+=\S*\s+)*)?"
-    r"(?:timeout\s+(?:\S+\s+){1,3})?"
-    r"(go\s+(?:test|build|vet|run|generate)|gomutant\s+(?:run|ephemeral)"
-    r"|stipulator\s+(?:check|gate|verify|compile)|task\s+(?:gen|test|build))\b"
+    CLAUSE_START
+    + MODIFIERS
+    + MLOCK_BIN
+    + r"\s+quiet\s+(?:\"[^\"]*\"|'[^']*'|\S+)\s+"
+    + MODIFIERS
+    + r"(?:(?:sh|bash)\s+-c\s+['\"]?\s*" + MODIFIERS + r")?"
+    + r"(" + ORDINARY_HEAVY + r")\b"
 )
 
 
-def deny(reason):
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": reason,
-        }
-    }))
+def allow(is_antigravity):
+    if is_antigravity:
+        print(json.dumps({"decision": "allow"}))
     sys.exit(0)
 
 
-try:
-    payload = json.load(sys.stdin)
-except Exception:
+def deny(reason, is_antigravity):
+    if is_antigravity:
+        print(json.dumps({"decision": "deny", "reason": reason}))
+    else:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        }))
     sys.exit(0)
-command = (payload.get("tool_input") or {}).get("command") or ""
-# A heredoc body is data (a commit message, a file being written), not a
-# command: drop each body before matching, so prose naming a heavy program
-# is not mistaken for running it.
-HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2[ \t]*(?=\n|$)", re.S)
-command = HEREDOC.sub("<<heredoc", command)
-misuse = QUIET_MISUSE.search(command)
-if misuse and "-bench" not in command:
+
+
+def main():
+    raw = sys.stdin.read()
+    is_antigravity = (
+        '"toolCall"' in raw
+        or any(k.startswith("ANTIGRAVITY_") for k in os.environ)
+        or "/.gemini/" in os.getcwd()
+    )
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        allow(is_antigravity)
+
+    if not isinstance(payload, dict):
+        allow(is_antigravity)
+
+    if "toolCall" in payload:
+        is_antigravity = True
+        tool_call = payload.get("toolCall")
+        args = tool_call.get("args") if isinstance(tool_call, dict) else None
+        command = args.get("CommandLine") if isinstance(args, dict) else None
+    elif "tool_input" in payload:
+        is_antigravity = False
+        tool_input = payload.get("tool_input")
+        command = tool_input.get("command") if isinstance(tool_input, dict) else None
+    else:
+        allow(is_antigravity)
+
+    if not isinstance(command, str) or not command.strip():
+        allow(is_antigravity)
+
+    # A heredoc body is data (a commit message, a file being written), not a
+    # command: drop each body before matching, so prose naming a heavy program
+    # is not mistaken for running it.
+    heredoc = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2[ \t]*(?=\n|$)", re.S)
+    command = heredoc.sub("<<heredoc", command)
+
+    misuse = QUIET_MISUSE.search(command)
+    if misuse and "-bench" not in command:
+        deny(
+            "quiet mode is for benchmarks alone: `" + misuse.group(1) + "` is "
+            "ordinary heavy work and runs as a shared holder, never with the "
+            "whole machine. Run it as `mlock run <cmd>`; `mlock quiet` is for "
+            "pew/cerebro measurements and `-bench` runs only.",
+            is_antigravity,
+        )
+
+    unwrapped = WRAPPED_CLAUSE.sub("", command)
+    if not HEAVY.search(unwrapped):
+        allow(is_antigravity)
+
+    state = "lock state unknown"
+    try:
+        probe = subprocess.run(
+            [MLOCK, "check"], capture_output=True, text=True, timeout=10
+        )
+        state = probe.stdout.strip() or state
+    except Exception:
+        pass  # a broken lock tool must never brick the session
+
     deny(
-        "quiet mode is for benchmarks alone: `" + misuse.group(1) + "` is "
-        "ordinary heavy work and runs as a shared holder, never with the "
-        "whole machine. Run it as `mlock run <cmd>`; `mlock quiet` is for "
-        "pew/cerebro measurements and `-bench` runs only."
+        "heavy command not wrapped in mlock. Run it as `mlock run <cmd>`: it "
+        "waits while a quiet run is wanted or held, then runs the command as "
+        "a shared holder, so give the call a timeout sized for the work plus "
+        "that wait or run it in the background. Measurements run as "
+        "`mlock quiet \"<reason>\" <cmd>`. Lock now: " + state,
+        is_antigravity,
     )
-if not HEAVY.search(command) or WRAPPED.search(command):
-    sys.exit(0)
-state = "lock state unknown"
-try:
-    probe = subprocess.run(
-        [MLOCK, "check"], capture_output=True, text=True, timeout=10
-    )
-    state = probe.stdout.strip() or state
-except Exception:
-    pass  # a broken lock tool must never brick the session
-deny(
-    "heavy command not wrapped in mlock. Run it as `mlock run <cmd>`: it "
-    "waits while a quiet run is wanted or held, then runs the command as "
-    "a shared holder, so give the call a timeout sized for the work plus "
-    "that wait or run it in the background. Measurements run as "
-    "`mlock quiet \"<reason>\" <cmd>`. Lock now: " + state
-)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        allow(True)
