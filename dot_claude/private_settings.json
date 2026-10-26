@@ -62,5 +62,6 @@
   "switchModelsOnFlag": false,
   "remoteControlAtStartup": false,
   "agentPushNotifEnabled": true,
-  "awaySummaryEnabled": false
+  "awaySummaryEnabled": false,
+  "idleCompaction": false
 }
