@@ -118,6 +118,24 @@
         "gpt-6-astra": {
           "limit": {
             "context": 1050000,
+            "input": 256000,
+            "output": 128000
+          }
+        },
+        "gpt-6-astra-long": {
+          "modelID": "gpt-6-astra",
+          "name": "GPT-6 Astra (long context — opt-in)",
+          "capabilities": {
+            "tools": true,
+            "input": ["text", "image"],
+            "output": ["text"],
+            "reasoning": {
+              "supported": true,
+              "effort": ["low", "medium", "high", "xhigh", "max"]
+            }
+          },
+          "limit": {
+            "context": 1050000,
             "input": 922000,
             "output": 128000
           }
@@ -126,8 +144,10 @@
     }
   },
   "compaction": {
+    "auto": true,
     "buffer": 20000
   },
+  "warming": false,
   "experimental": {
     "mcp_timeout": 18000000
   }
