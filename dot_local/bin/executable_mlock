@@ -110,7 +110,11 @@ run)
 		fi
 		flock -s "$LOCK" true
 	done
-	exec flock -s "$LOCK" "$@"
+	# -o: flock itself keeps the shared lock and runs the command with the
+	# lock's descriptor closed, so a daemon the command leaves behind (an
+	# envtest apiserver, a forgotten server) cannot keep the machine's lock
+	# after the heavy work is gone.
+	exec flock -s -o "$LOCK" "$@"
 	;;
 quiet)
 	shift
@@ -119,13 +123,16 @@ quiet)
 	shift
 	printf '%s (pid %s, since %s)\n' "$reason" "$$" "$(date -Is)" >"$WANTED"
 	# The refresher re-opens a priority window every cycle while this
-	# request waits; it dies with the request.
-	( while kill -0 "$$" 2>/dev/null; do sleep "$WANTED_CYCLE"; touch "$WANTED" 2>/dev/null; done ) &
+	# request waits; it dies with the request. It runs detached from the
+	# caller's descriptors: a sleeping refresher that outlives the request
+	# must not hold a pipe the caller reads to its end.
+	( while kill -0 "$$" 2>/dev/null; do sleep "$WANTED_CYCLE"; touch "$WANTED" 2>/dev/null; done ) >/dev/null 2>&1 </dev/null &
 	refresher=$!
 	trap 'kill "$refresher" 2>/dev/null || true; rm -f "$WANTED" "$QUIETREC"' EXIT
 	# The exclusive hold rides an fd this shell keeps open, so the drain
 	# (-x waits for every shared holder to release) and the run are one
-	# hold, inherited by the command's process tree.
+	# hold; the command runs with that fd closed, so nothing it leaves
+	# behind can keep the machine quiet after it.
 	exec {qfd}>>"$LOCK"
 	if ! flock -x -w "$QUIET_WAIT" -E "$TEMPFAIL" "$qfd"; then
 		echo "mlock quiet: the machine did not drain within ${QUIET_WAIT}s — $reason" >&2
@@ -139,7 +146,7 @@ quiet)
 	# interrupted rather than left holding the machine against everyone.
 	# INT first so a measurement can render its ending; TERM 30s later;
 	# timeout's own KILL after that.
-	timeout --foreground --signal=INT --kill-after=30 "$QUIET_MAX" "$@" &
+	timeout --foreground --signal=INT --kill-after=30 "$QUIET_MAX" "$@" {qfd}>&- &
 	child=$!
 	printf '%s (pid %s, child %s, since %s, bound %ss)\n' "$reason" "$$" "$child" "$(date -Is)" "$QUIET_MAX" >"$QUIETREC"
 	exec_status=0
